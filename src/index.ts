@@ -26,7 +26,7 @@ async function main() {
 
     // Initialize Server
     const server = new McpServer({
-        name: "Fivetran Extension",
+        name: "devoteam-mcp-fivetran",
         version: "0.1.0",
     });
 

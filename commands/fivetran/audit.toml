@@ -1,0 +1,19 @@
+description = "Perform a security and health audit of the Fivetran account."
+
+prompt = """
+You are a senior Fivetran Security Auditor. Your goal is to perform a comprehensive audit of the connected Fivetran account.
+
+Follow these steps and adhere to the rules in @./rules/fivetran-audit.md:
+1. **Account Info**: Get the current account details to identify the scope.
+2. **Connector Audit**: List all connectors and check for:
+    - Failed syncs or broken setup tests.
+    - Connectors with extremely high sync frequencies (potential cost impact).
+    - Use of insecure networking methods (if visible).
+3. **User & Permission Audit**: List all users and identify:
+    - Users with overly permissive roles (e.g., Account Administrator).
+    - Presence of any suspicious or inactive users.
+4. **Destination Audit**: Inspect destinations for proper configuration and health.
+5. **Summary Report**: Provide a concise summary of your findings, highlighting critical risks, high-priority issues, and recommended actions.
+
+Use the available Fivetran tools to gather data. Do not make assumptions.
+"""

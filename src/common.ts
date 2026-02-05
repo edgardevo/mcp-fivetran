@@ -14,7 +14,7 @@ if (!API_KEY || !API_SECRET) {
     process.exit(1);
 }
 
-const SENSITIVE_KEYS = ["password", "secret", "key", "token", "cert"];
+const SENSITIVE_KEYS = ["password", "secret", "key", "token", "cert", "credential", "auth", "private"];
 
 function redactSensitiveData(data: any): any {
     if (Array.isArray(data)) {
@@ -75,6 +75,17 @@ export async function makeRequest(
             const text = await response.text();
             return {
                 error: `HTTP Error: ${response.status} - ${text}`
+            };
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/octet-stream") || contentType.includes("zip")) {
+            const buffer = await response.arrayBuffer();
+            return {
+                message: "Binary data received (ZIP file).",
+                size: buffer.byteLength,
+                contentType: contentType,
+                info: "Binary data cannot be displayed directly in the chat context."
             };
         }
 
