@@ -1,0 +1,23 @@
+{
+    "name": "devoteam-mcp-fivetran",
+    "version": "0.1.0",
+    "description": "Fivetran MCP Server",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "tsx src/index.ts",
+        "generate": "python3 scripts/generate_mcp_tools_ts.py"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.0",
+        "zod": "^3.22.0",
+        "dotenv": "^16.3.0",
+        "csv-stringify": "^6.4.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "@types/node": "^20.0.0",
+        "tsx": "^4.0.0"
+    }
+}

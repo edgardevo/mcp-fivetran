@@ -1,0 +1,19 @@
+{
+  "name": "devoteam-mcp-fivetran",
+  "version": "0.1.0",
+  "description": "Fivetran Gemini CLI Extension",
+  "mcp-servers": [
+    {
+      "name": "Fivetran Extension",
+      "command": "node",
+      "args": [
+        "${extensionPath}${/}dist${/}index.js"
+      ],
+      "cwd": "${extensionPath}",
+      "env": {
+        "FIVETRAN_API_KEY": "${FIVETRAN_API_KEY}",
+        "FIVETRAN_API_SECRET": "${FIVETRAN_API_SECRET}"
+      }
+    }
+  ]
+}
