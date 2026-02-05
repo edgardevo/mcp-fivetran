@@ -6,7 +6,7 @@
 This extension interacts with Fivetran via the `mcp-fivetran-read-only` scope. It can only inspect, audit, and analyze your account. No write or delete operations are permitted.
 
 ### Recursive Redaction
-All API responses are automatically scanned for sensitive keys before being returned to the AI model. 
+All API responses are automatically scanned for sensitive keys before being returned to the AI model.
 - **Trigger keywords**: `password`, `secret`, `key`, `token`, `cert`.
 - **Replacement**: `[REDACTED]`
 
