@@ -1,0 +1,13 @@
+description = "Export a comprehensive audit of the Fivetran instance (connections, teams, users, roles) to CSV files."
+
+prompt = """
+Use the `export_audit_report` tool to generate a full audit of the Fivetran instance.
+
+This will export:
+1. **Connections Audit**: Includes connection types, names, sources, destinations, networking methods, and setup status.
+2. **Teams Audit**: A list of all teams in the account.
+3. **Users Audit**: A list of users, their roles, and their last login timestamp.
+4. **Roles Audit**: A list of all available roles in the instance.
+
+The tool will save these files to a timestamped directory within the `exports/` folder.
+"""

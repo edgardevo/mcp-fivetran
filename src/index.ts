@@ -26,8 +26,8 @@ async function main() {
 
     // Initialize Server
     const server = new McpServer({
-        name: "devoteam-mcp-fivetran",
-        version: "0.1.0",
+        name: "dgc-fivetran",
+        version: "0.4.0",
     });
 
     registerGeneratedTools(server);

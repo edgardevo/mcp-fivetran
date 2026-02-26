@@ -12,12 +12,13 @@
         "typescript": "^5.0.0"
     },
     "main": "dist/index.js",
-    "name": "devoteam-mcp-fivetran",
+    "name": "dgc-fivetran",
     "scripts": {
         "build": "tsc",
         "dev": "tsx src/index.ts",
         "generate": "python3 scripts/generate_mcp_tools_ts.py",
-        "start": "node dist/index.js"
+        "start": "node dist/index.js",
+        "validate": "node scripts/validate-template.mjs"
     },
-    "version": "0.1.0"
+    "version": "0.4.0"
 }

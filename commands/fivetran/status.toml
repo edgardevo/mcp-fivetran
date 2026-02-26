@@ -1,0 +1,7 @@
+description = "Quickly check the Fivetran connection status."
+
+prompt = """
+Run the `test_connection` tool.
+If successful, summarize the account ID and name, and state that the Fivetran extension is ready for auditing.
+If it fails, explain the error (e.g., authentication failure).
+"""

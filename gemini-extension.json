@@ -3,7 +3,7 @@
         "commands"
     ],
     "contextFileName": "GEMINI.md",
-    "description": "Fivetran Gemini CLI Extension",
+    "description": "Fivetran Gemini CLI Extension: Audit and inspect Fivetran accounts with specialized security skills and standardized report templates.",
     "mcp-servers": [
         {
             "args": [
@@ -13,18 +13,11 @@
             "cwd": "${extensionPath}"
         }
     ],
-    "name": "devoteam-mcp-fivetran",
-    "settings": [
-        {
-            "description": "Fivetran API Secret",
-            "envVar": "FIVETRAN_API_SECRET",
-            "name": "Fivetran API Secret"
-        },
-        {
-            "description": "Fivetran API Key",
-            "envVar": "FIVETRAN_API_KEY",
-            "name": "Fivetran API Key"
-        }
+    "name": "dgc-fivetran",
+    "rules": [
+        "rules",
+        "references"
     ],
-    "version": "0.1.0"
+    "skills": "skills",
+    "version": "0.4.0"
 }

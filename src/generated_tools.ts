@@ -273,7 +273,7 @@ export function registerGeneratedTools(server: McpServer) {
   );
 
   server.tool(
-    "list_connections",
+    "list_all_connections",
     "List All Connections",
     {
     group_id: z.string().describe("Specify the group identifier to filter connections by group").optional(),

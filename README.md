@@ -1,4 +1,4 @@
-# devoteam-mcp-fivetran
+# dgc-fivetran
 
 A specialized Gemini CLI Extension for auditing and inspecting Fivetran accounts. This extension is **strictly read-only** and designed for security and compliance.
 
@@ -21,7 +21,7 @@ A specialized Gemini CLI Extension for auditing and inspecting Fivetran accounts
 ```bash
 # Clone the repository
 git clone <repo-url>
-cd devoteam-mcp-fivetran
+cd dgc-fivetran
 
 # Install dependencies
 npm install

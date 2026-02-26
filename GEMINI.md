@@ -2,6 +2,25 @@
 
 This extension provides a specialized interface for auditing and inspecting Fivetran accounts. It is strictly **read-only** and designed with security and compliance in mind.
 
+## 🚨 Tool Affinity Mandate (CRITICAL)
+
+To ensure consistency, security, and proper redaction, you **MUST** follow these rules for all Fivetran interactions:
+
+1. **Use MCP Tools Only**: ALWAYS use the provided MCP tools (e.g., `list_all_connections`, `get_connector_details`) to interact with the Fivetran API.
+2. **NO CURL / NO SCRIPTS**: Never generate or execute `curl` commands, `https` scripts, or manual API calls.
+3. **Redaction Trust**: Trust the data returned by the tools. All sensitive fields are automatically redacted by the server.
+4. **Tool Discovery**: If you are unsure which tool to use, list the available tools first. Do not assume the API endpoint path is the tool name (though they are often similar).
+
+## Setup
+
+### Authentication
+This extension requires a Fivetran API Key and Secret. To avoid being prompted during installation, ensure these are set in your shell environment or a `.env` file in the extension directory:
+
+- `FIVETRAN_API_KEY`: Your Fivetran API Key.
+- `FIVETRAN_API_SECRET`: Your Fivetran API Secret.
+
+You can find these in your Fivetran account settings under **API Config**.
+
 ## Core Mandates
 
 - **Read-Only**: This extension only supports `GET` operations. Do not attempt to create, update, or delete resources.
@@ -27,13 +46,17 @@ For large-scale auditing, use the `export_fivetran_data` tool. This will generat
 Most Fivetran `GET` endpoints are exposed as tools. Common ones include:
 
 - `list_all_connections`: List all connectors in the account.
+- `get_connector_details`: Detailed info for a specific connector.
 - `list_all_users`: List all users.
 - `list_all_groups`: List all groups/destinations.
-- `list_destinations`: List all destinations.
 - `get_account_info`: Get account details from the API key.
 
 ### Specialized Audit Tools
 
+- `get_account_health_summary`: Global overview of connector statuses.
+- `get_lineage_report`: Source-to-sink mapping.
+- `analyze_connector_issues`: Deep-dive into failing connectors.
+- `find_connector_by_table`: Find the connector for a specific table.
 - `get_next_page`: Fetches the next page of a paginated resource.
 - `export_fivetran_data`: Exports resource data to a CSV file.
 

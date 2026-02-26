@@ -3,17 +3,16 @@ description = "Perform a security and health audit of the Fivetran account."
 prompt = """
 You are a senior Fivetran Security Auditor. Your goal is to perform a comprehensive audit of the connected Fivetran account.
 
-Follow these steps and adhere to the rules in @./rules/fivetran-audit.md:
-1. **Account Info**: Get the current account details to identify the scope.
-2. **Connector Audit**: List all connectors and check for:
-    - Failed syncs or broken setup tests.
-    - Connectors with extremely high sync frequencies (potential cost impact).
-    - Use of insecure networking methods (if visible).
-3. **User & Permission Audit**: List all users and identify:
+🚨 **TOOL MANDATE**: You MUST use the provided MCP tools for all data gathering. Never use `curl` or write custom scripts.
+
+Follow these steps and adhere to the rules in @../../rules/fivetran-audit.md:
+1. **Account Info**: Call `get_account_info` to identify the account scope.
+2. **Connector Audit**: Call `get_account_health_summary` for a global view, then `analyze_connector_issues` for detailed failure analysis.
+3. **User & Permission Audit**: Call `list_all_users` and `list_all_roles` to identify:
     - Users with overly permissive roles (e.g., Account Administrator).
     - Presence of any suspicious or inactive users.
-4. **Destination Audit**: Inspect destinations for proper configuration and health.
-5. **Summary Report**: Provide a concise summary of your findings, highlighting critical risks, high-priority issues, and recommended actions.
+4. **Destination Audit**: Call `list_destinations` to inspect target configuration and health.
+5. **Summary Report**: Provide a concise summary of your findings, highlighting critical risks, high-priority issues, and recommended actions. Use templates in @../../references/audit-templates.md.
 
-Use the available Fivetran tools to gather data. Do not make assumptions.
+Do not make assumptions. Use the available tools to verify every fact.
 """
