@@ -36,7 +36,8 @@ function redactSensitiveData(data: any): any {
 export async function makeRequest(
     method: string,
     endpoint: string,
-    params?: Record<string, any>
+    params?: Record<string, any>,
+    body?: any
 ): Promise<any> {
     const url = new URL(
         endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`
@@ -58,17 +59,22 @@ export async function makeRequest(
         Accept: "application/json;version=2", // Fivetran recommends api versioning
     };
 
+    const options: RequestInit = {
+        method,
+        headers,
+    };
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
+
     try {
-        const response = await fetch(url.toString(), {
-            method,
-            headers,
-        });
+        const response = await fetch(url.toString(), options);
 
         if (response.status === 429) {
             const retryAfter = parseInt(response.headers.get("Retry-After") || "1", 10);
             console.error(`Rate limited. Retrying after ${retryAfter}s...`);
             await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-            return makeRequest(method, endpoint, params);
+            return makeRequest(method, endpoint, params, body);
         }
 
         if (!response.ok) {

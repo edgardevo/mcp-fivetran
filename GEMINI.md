@@ -23,7 +23,7 @@ You can find these in your Fivetran account settings under **API Config**.
 
 ## Core Mandates
 
-- **Read-Only**: This extension only supports `GET` operations. Do not attempt to create, update, or delete resources.
+- **Mostly Read-Only**: This extension primarily supports `GET` operations for auditing. It also provides specific tools (`create_connector`, `sync_connector`, `resync_connector`) for managing connections. Do not attempt to create, update, or delete other resources manually.
 - **Security-First**: All outputs are automatically redacted for sensitive information (passwords, secrets, tokens). You can trust the data returned is safe for analysis.
 - **Data-Driven**: Use the inspection tools to gather facts about connectors, users, and groups before making conclusions.
 

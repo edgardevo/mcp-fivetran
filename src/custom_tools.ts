@@ -204,7 +204,8 @@ export function registerCustomTools(server: McpServer) {
             limit: z.number().optional().default(100).describe("Number of records to fetch"),
         },
         async ({ endpoint, cursor, limit }) => {
-            return await makeRequest("GET", endpoint, { cursor, limit });
+            const response = await makeRequest("GET", endpoint, { cursor, limit });
+            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
         }
     );
 
@@ -306,7 +307,8 @@ export function registerCustomTools(server: McpServer) {
             connector_id: z.string().describe("The unique identifier for the connector.")
         },
         async ({ connector_id }) => {
-            return await makeRequest("GET", `/connections/${connector_id}`);
+            const response = await makeRequest("GET", `/connections/${connector_id}`);
+            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
         }
     );
 
@@ -319,7 +321,25 @@ export function registerCustomTools(server: McpServer) {
             limit: z.number().optional().describe("Records per page")
         },
         async (args) => {
-            return await makeRequest("GET", "/connections", args);
+            const response = await makeRequest("GET", "/connections", args);
+            if (response.error || !response.data?.items) {
+                return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
+            }
+
+            // Format output nicely and prevent LLM context overflow by limiting returned keys
+            response.data.items = response.data.items.map((c: any) => ({
+                id: c.id,
+                group_id: c.group_id,
+                service: c.service,
+                schema: c.schema,
+                paused: c.paused,
+                sync_state: c.status?.sync_state,
+                setup_state: c.status?.setup_state,
+                last_successful_sync: c.succeeded_at,
+                last_failed_sync: c.failed_at
+            }));
+
+            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
         }
     );
 
@@ -330,7 +350,8 @@ export function registerCustomTools(server: McpServer) {
             connector_id: z.string().describe("The unique identifier for the connector.")
         },
         async ({ connector_id }) => {
-            return await makeRequest("GET", `/connections/${connector_id}/schemas`);
+            const response = await makeRequest("GET", `/connections/${connector_id}/schemas`);
+            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
         }
     );
 
@@ -343,7 +364,8 @@ export function registerCustomTools(server: McpServer) {
             table: z.string().describe("The table name.")
         },
         async ({ connector_id, schema, table }) => {
-            return await makeRequest("GET", `/connections/${connector_id}/schemas/${schema}/tables/${table}/columns`);
+            const response = await makeRequest("GET", `/connections/${connector_id}/schemas/${schema}/tables/${table}/columns`);
+            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
         }
     );
 
@@ -355,7 +377,7 @@ export function registerCustomTools(server: McpServer) {
         {},
         async () => {
             const connectionsResp = await makeRequest("GET", "/connections");
-            if (connectionsResp.error) return connectionsResp;
+            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
 
             const items = connectionsResp.data?.items || [];
             const summary = {
@@ -403,8 +425,8 @@ export function registerCustomTools(server: McpServer) {
             const connectionsResp = await makeRequest("GET", "/connections");
             const destinationsResp = await makeRequest("GET", "/destinations");
 
-            if (connectionsResp.error) return connectionsResp;
-            if (destinationsResp.error) return destinationsResp;
+            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
+            if (destinationsResp.error) return { content: [{ type: "text", text: typeof destinationsResp === 'string' ? destinationsResp : JSON.stringify(destinationsResp, null, 2) }] };
 
             const connections = connectionsResp.data?.items || [];
             const destinations = destinationsResp.data?.items || [];
@@ -436,7 +458,7 @@ export function registerCustomTools(server: McpServer) {
         {},
         async () => {
             const connectionsResp = await makeRequest("GET", "/connections");
-            if (connectionsResp.error) return connectionsResp;
+            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
 
             const items = connectionsResp.data?.items || [];
             const issues = items
@@ -474,7 +496,7 @@ export function registerCustomTools(server: McpServer) {
         },
         async ({ table_name }) => {
             const connectionsResp = await makeRequest("GET", "/connections");
-            if (connectionsResp.error) return connectionsResp;
+            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
 
             const items = connectionsResp.data?.items || [];
             const results = [];
@@ -516,6 +538,64 @@ export function registerCustomTools(server: McpServer) {
                         ? JSON.stringify(results, null, 2)
                         : `No connector found syncing table: ${table_name}`
                 }]
+            };
+        }
+    );
+
+    server.tool(
+        "create_connector",
+        "Creates a new connector in the Fivetran account.",
+        {
+            service: z.string().describe("The specific connector service (e.g. 'postgres', 'salesforce')"),
+            group_id: z.string().describe("The destination group ID"),
+            config: z.any().describe("A JSON object containing the connector-specific configuration"),
+            run_setup_tests: z.boolean().optional().describe("Whether to run setup tests automatically"),
+            paused: z.boolean().optional().describe("Whether to create the connector in a paused state"),
+            sync_frequency: z.number().optional().describe("Sync frequency in minutes")
+        },
+        async (args) => {
+            const body = {
+                service: args.service,
+                group_id: args.group_id,
+                config: args.config,
+                run_setup_tests: args.run_setup_tests,
+                paused: args.paused,
+                sync_frequency: args.sync_frequency
+            };
+            Object.keys(body).forEach(key => (body as any)[key] === undefined && delete (body as any)[key]);
+
+            const response = await makeRequest("POST", "/connections", undefined, body);
+            return {
+                content: [{ type: "text", text: JSON.stringify(response, null, 2) }]
+            };
+        }
+    );
+
+    server.tool(
+        "sync_connector",
+        "Forces a sync for a specific connector.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            force: z.boolean().optional().describe("If true, forces a sync even if one is already running.")
+        },
+        async ({ connector_id, force }) => {
+            const response = await makeRequest("POST", `/connections/${connector_id}/sync`, undefined, force !== undefined ? { force } : undefined);
+            return {
+                content: [{ type: "text", text: JSON.stringify(response, null, 2) }]
+            };
+        }
+    );
+
+    server.tool(
+        "resync_connector",
+        "Triggers a full historical resync of a connector or specific tables/schemas.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector.")
+        },
+        async ({ connector_id }) => {
+            const response = await makeRequest("POST", `/connections/${connector_id}/resync`);
+            return {
+                content: [{ type: "text", text: JSON.stringify(response, null, 2) }]
             };
         }
     );
