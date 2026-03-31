@@ -1,0 +1,45 @@
+# Configuration file for `prek`, a git hook framework written in Rust.
+# See https://prek.j178.dev for more information.
+#:schema https://www.schemastore.org/prek.json
+
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+hooks = [
+  { id = "trailing-whitespace" },
+  { id = "end-of-file-fixer" },
+  { id = "check-yaml" },
+  { id = "check-added-large-files", args = ["--maxkb=500"] },
+  { id = "check-json" },
+  { id = "check-merge-conflict" },
+  { id = "check-toml" },
+  { id = "check-ast" },
+  { id = "check-case-conflict" },
+  { id = "check-docstring-first" },
+  { id = "debug-statements" },
+  { id = "detect-private-key" },
+  { id = "mixed-line-ending" },
+  { id = "pretty-format-json", args = ["--autofix", "--indent", "4"] },
+  { id = "check-executables-have-shebangs" }
+]
+
+[[repos]]
+repo = "https://github.com/Lucas-C/pre-commit-hooks"
+rev = "v1.5.5"
+hooks = [
+  { id = "remove-crlf" },
+  { id = "forbid-crlf" }
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "npm-build",
+    name = "npm build",
+    entry = "npm run build",
+    language = "system",
+    files = '\.(ts|tsx|json)$',
+    pass_filenames = false
+  }
+]
