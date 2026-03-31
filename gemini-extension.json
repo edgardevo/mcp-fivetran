@@ -4,15 +4,15 @@
     ],
     "contextFileName": "GEMINI.md",
     "description": "Fivetran Gemini CLI Extension: Audit and inspect Fivetran accounts with specialized security skills and standardized report templates.",
-    "mcp-servers": [
-        {
+    "mcpServers": {
+        "fivetran": {
             "args": [
                 "${extensionPath}${/}dist${/}index.js"
             ],
             "command": "node",
             "cwd": "${extensionPath}"
         }
-    ],
+    },
     "name": "dgc-fivetran",
     "rules": [
         "rules",
