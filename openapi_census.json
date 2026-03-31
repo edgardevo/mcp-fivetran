@@ -1,0 +1,258 @@
+{
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "scheme": "bearer",
+                "type": "http"
+            }
+        }
+    },
+    "info": {
+        "description": "API reference for Fivetran Activations (formerly Census), a reverse ELT service.",
+        "title": "Fivetran Activations (Census) API",
+        "version": "1.0.0"
+    },
+    "openapi": "3.0.0",
+    "paths": {
+        "/destinations": {
+            "get": {
+                "description": "Returns a list of destinations in the workspace.",
+                "responses": {
+                    "200": {
+                        "description": "A list of destinations."
+                    }
+                },
+                "summary": "List Destinations"
+            }
+        },
+        "/sources": {
+            "get": {
+                "description": "Returns a list of sources in the workspace.",
+                "responses": {
+                    "200": {
+                        "description": "A list of sources."
+                    }
+                },
+                "summary": "List Sources"
+            }
+        },
+        "/sync_runs": {
+            "get": {
+                "description": "Returns a list of sync runs in the workspace.",
+                "responses": {
+                    "200": {
+                        "description": "A list of sync runs."
+                    }
+                },
+                "summary": "List Sync Runs"
+            }
+        },
+        "/sync_runs/{id}": {
+            "get": {
+                "description": "Returns details for a specific sync run.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sync run details."
+                    }
+                },
+                "summary": "Get Sync Run"
+            }
+        },
+        "/syncs": {
+            "get": {
+                "description": "Returns a list of syncs in the workspace.",
+                "responses": {
+                    "200": {
+                        "description": "A list of syncs."
+                    }
+                },
+                "summary": "List Syncs"
+            },
+            "post": {
+                "description": "Creates a new sync.",
+                "responses": {
+                    "201": {
+                        "description": "Sync created."
+                    }
+                },
+                "summary": "Create Sync"
+            }
+        },
+        "/syncs/{id}": {
+            "delete": {
+                "description": "Deletes a sync.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Sync deleted."
+                    }
+                },
+                "summary": "Delete Sync"
+            },
+            "get": {
+                "description": "Returns details for a specific sync.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sync details."
+                    }
+                },
+                "summary": "Get Sync"
+            },
+            "patch": {
+                "description": "Updates an existing sync.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sync updated."
+                    }
+                },
+                "summary": "Update Sync"
+            }
+        },
+        "/syncs/{id}/trigger": {
+            "post": {
+                "description": "Manually triggers a new run for a specific sync.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Sync run triggered."
+                    }
+                },
+                "summary": "Trigger Sync"
+            }
+        },
+        "/users": {
+            "get": {
+                "description": "Returns a list of users in the organization.",
+                "responses": {
+                    "200": {
+                        "description": "A list of users."
+                    }
+                },
+                "summary": "List Users"
+            }
+        },
+        "/workspaces": {
+            "get": {
+                "description": "Returns a list of workspaces in the organization.",
+                "responses": {
+                    "200": {
+                        "description": "A list of workspaces."
+                    }
+                },
+                "summary": "List Workspaces"
+            },
+            "post": {
+                "description": "Creates a new workspace in the organization.",
+                "responses": {
+                    "201": {
+                        "description": "Workspace created."
+                    }
+                },
+                "summary": "Create Workspace"
+            }
+        },
+        "/workspaces/{id}": {
+            "delete": {
+                "description": "Deletes a workspace.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Workspace deleted."
+                    }
+                },
+                "summary": "Delete Workspace"
+            },
+            "get": {
+                "description": "Returns details for a specific workspace.",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Workspace details."
+                    }
+                },
+                "summary": "Get Workspace"
+            }
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "servers": [
+        {
+            "description": "US Region",
+            "url": "https://app.getcensus.com/api/v1"
+        },
+        {
+            "description": "EU Region",
+            "url": "https://app-eu.getcensus.com/api/v1"
+        }
+    ]
+}

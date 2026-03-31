@@ -1,35 +1,36 @@
 # Fivetran Gemini CLI Extension
 
-This extension provides a specialized interface for auditing and inspecting Fivetran accounts. It is strictly **read-only** and designed with security and compliance in mind.
+This extension provides a specialized interface for auditing and inspecting Fivetran accounts and Fivetran Activations (Census) reverse-ELT pipelines. It is strictly **read-only** for operational tools and designed with security and compliance in mind.
 
 ## 🚨 Tool Affinity Mandate (CRITICAL)
 
-To ensure consistency, security, and proper redaction, you **MUST** follow these rules for all Fivetran interactions:
+To ensure consistency, security, and proper redaction, you **MUST** follow these rules for all Fivetran and Activations interactions:
 
-1. **Use MCP Tools Only**: ALWAYS use the provided MCP tools (e.g., `list_all_connections`, `get_connector_details`) to interact with the Fivetran API.
+1. **Use MCP Tools Only**: ALWAYS use the provided MCP tools (e.g., `list_all_connections`, `activations_list_syncs`) to interact with the Fivetran and Census APIs.
 2. **NO CURL / NO SCRIPTS**: Never generate or execute `curl` commands, `https` scripts, or manual API calls.
-3. **Redaction Trust**: Trust the data returned by the tools. All sensitive fields are automatically redacted by the server.
-4. **Tool Discovery**: If you are unsure which tool to use, list the available tools first. Do not assume the API endpoint path is the tool name (though they are often similar).
+3. **Redaction Trust**: Trust the data returned by the tools. All sensitive fields (Fivetran & Census) are automatically redacted by the server.
 
 ## Setup
 
 ### Authentication
-This extension requires a Fivetran API Key and Secret. To avoid being prompted during installation, ensure these are set in your shell environment or a `.env` file in the extension directory:
+This extension requires Fivetran API credentials and/or a Census API Key. Ensure these are set in your shell environment or a `.env` file:
 
 - `FIVETRAN_API_KEY`: Your Fivetran API Key.
 - `FIVETRAN_API_SECRET`: Your Fivetran API Secret.
-
-You can find these in your Fivetran account settings under **API Config**.
+- `CENSUS_API_KEY`: Your Census Personal Access Token or Workspace API Key.
 
 ## Core Mandates
 
-- **Mostly Read-Only**: This extension primarily supports `GET` operations for auditing. It also provides specific tools (`create_connector`, `sync_connector`, `resync_connector`) for managing connections. Do not attempt to create, update, or delete other resources manually.
-- **Security-First**: All outputs are automatically redacted for sensitive information (passwords, secrets, tokens). You can trust the data returned is safe for analysis.
-- **Data-Driven**: Use the inspection tools to gather facts about connectors, users, and groups before making conclusions.
+- **Read-Only Inspection**: This extension provides `GET` operations for auditing. Do not attempt to modify resources manually.
+- **Security-First**: All outputs are automatically redacted for sensitive information. You can trust the data returned is safe for analysis.
+- **Data-Driven**: Use the inspection tools to gather facts about connectors, syncs, users, and groups before making conclusions.
 
 ## Key Features
 
-### 1. Recursive Redaction
+### 1. Unified Audit
+Audit both standard ELT (Fivetran) and Reverse ELT (Activations/Census) pipelines from a single interface.
+
+### 2. Recursive Redaction
 All API responses are scrubbed for sensitive keys. If you see `[REDACTED]`, it means a password or token was removed for safety.
 
 ### 2. Pagination Support

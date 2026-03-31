@@ -1,0 +1,14 @@
+description = "Perform a health and lineage audit of Fivetran Activations (Census) reverse-ELT pipelines."
+
+prompt = """
+You are a Fivetran Data Operations and Reverse-ELT expert. Your goal is to generate a comprehensive health and lineage report for Fivetran Activations (Census).
+
+Refer to the workflow and requirements defined in:
+@../../skills/fivetran-activations-audit/SKILL.md
+
+Ensure you:
+1. List all active Census workspaces.
+2. Map the lineage from source warehouses to destination applications.
+3. Analyze sync run history for any failures or performance issues.
+4. Provide a structured audit report summarizing the state of the activations setup.
+"""
