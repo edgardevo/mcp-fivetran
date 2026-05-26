@@ -1,4 +1,7 @@
 {
+    "bugs": {
+        "url": "https://github.com/edgardevo/mcp-fivetran/issues"
+    },
     "dependencies": {
         "@modelcontextprotocol/sdk": "^1.0.0",
         "csv-stringify": "^6.4.0",
@@ -9,17 +12,27 @@
     "devDependencies": {
         "@types/node": "^20.0.0",
         "tsx": "^4.0.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.0.0",
+        "vitest": "^2.1.0"
     },
+    "homepage": "https://github.com/edgardevo/mcp-fivetran#readme",
+    "license": "MIT",
     "main": "dist/index.js",
     "name": "dgc-fivetran",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/edgardevo/mcp-fivetran.git"
+    },
     "scripts": {
         "build": "tsc",
+        "bump": "node scripts/bump-version.mjs",
         "dev": "tsx src/index.ts",
         "generate": "python3 scripts/generate_mcp_tools_ts.py",
         "lint": "prek run --all-files",
         "start": "node dist/index.js",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "validate": "node scripts/validate-template.mjs"
     },
-    "version": "0.5.0"
+    "version": "0.6.0"
 }

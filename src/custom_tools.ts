@@ -5,36 +5,7 @@ import * as path from "path";
 import { stringify } from "csv-stringify/sync";
 import { makeRequest } from "./common.js";
 
-// Helper to flatten JSON
-function flattenJson(y: any, name: string = ""): Record<string, any> {
-    let out: Record<string, any> = {};
-
-    if (y && typeof y === "object" && !Array.isArray(y)) {
-        for (const idx in y) {
-            const newName = name ? `${name}.${idx}` : idx;
-            const value = y[idx];
-            if (typeof value === 'object' && value !== null) {
-                const flattened = flattenJson(value, newName);
-                out = { ...out, ...flattened };
-            } else {
-                out[newName] = value;
-            }
-        }
-    } else if (Array.isArray(y)) {
-        // For arrays, stringify or join
-        if (y.length > 0 && typeof y[0] === 'object') {
-            out[name] = JSON.stringify(y);
-        } else {
-            out[name] = y.join(';');
-        }
-    } else {
-        out[name] = y;
-    }
-    return out;
-}
-
-// Better flattening function that handles the recursion correctly for dot notation
-function flatten(data: any): Record<string, any> {
+export function flatten(data: any): Record<string, any> {
     const result: Record<string, any> = {};
 
     function recurse(cur: any, prop: string) {

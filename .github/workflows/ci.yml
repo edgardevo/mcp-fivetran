@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type-check & build
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm test
+
+  lint:
+    name: prek hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # The local `npm-build` hook needs project deps installed.
+      - run: npm ci
+
+      # uv provides prek and the Python interpreter the upstream hooks need.
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Run prek hooks
+        run: uvx prek run --all-files --show-diff-on-failure
