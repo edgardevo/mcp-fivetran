@@ -34,7 +34,16 @@ export function flatten(data: any): Record<string, any> {
 }
 
 
-export function registerCustomTools(server: McpServer) {
+// Whitelist of truthy values for FIVETRAN_ALLOW_WRITES — keeps "false", "0",
+// "no", "" all evaluating as off.
+const TRUTHY_WRITE_FLAGS = new Set(["true", "1", "yes"]);
+export function isWriteEnabled(value: string | undefined = process.env.FIVETRAN_ALLOW_WRITES): boolean {
+    if (!value) return false;
+    return TRUTHY_WRITE_FLAGS.has(value.trim().toLowerCase());
+}
+
+export function registerCustomTools(server: McpServer, options: { allowWrites?: boolean } = {}) {
+    const allowWrites = options.allowWrites ?? isWriteEnabled();
     server.tool(
         "test_connection",
         "Tests the connection to the Fivetran API using the FIVETRAN_API_KEY and FIVETRAN_API_SECRET environment variables. Returns the account ID if successful.",
@@ -512,6 +521,10 @@ export function registerCustomTools(server: McpServer) {
             };
         }
     );
+
+    if (!allowWrites) {
+        return;
+    }
 
     server.tool(
         "create_connector",

@@ -15,7 +15,9 @@ vi.mock("../src/common.js", () => {
 });
 
 const { makeRequest } = await import("../src/common.js");
-const { registerCustomTools } = await import("../src/custom_tools.js");
+const { registerCustomTools, isWriteEnabled } = await import("../src/custom_tools.js");
+
+const WRITE_TOOLS = ["create_connector", "sync_connector", "resync_connector"] as const;
 
 type Handler = (args: any) => Promise<any>;
 
@@ -43,7 +45,7 @@ describe("create_connector", () => {
         vi.mocked(makeRequest).mockReset();
         ({ handlers } = (() => {
             const { server, handlers } = buildServer();
-            registerCustomTools(server as any);
+            registerCustomTools(server as any, { allowWrites: true });
             return { handlers };
         })());
     });
@@ -106,7 +108,7 @@ describe("list_connectors", () => {
         vi.mocked(makeRequest).mockReset();
         ({ handlers } = (() => {
             const { server, handlers } = buildServer();
-            registerCustomTools(server as any);
+            registerCustomTools(server as any, { allowWrites: true });
             return { handlers };
         })());
     });
@@ -170,7 +172,7 @@ describe("get_account_health_summary", () => {
         vi.mocked(makeRequest).mockReset();
         ({ handlers } = (() => {
             const { server, handlers } = buildServer();
-            registerCustomTools(server as any);
+            registerCustomTools(server as any, { allowWrites: true });
             return { handlers };
         })());
     });
@@ -227,5 +229,61 @@ describe("get_account_health_summary", () => {
             service: "mysql",
             error: "auth failed",
         });
+    });
+});
+
+describe("write-tool gating via FIVETRAN_ALLOW_WRITES", () => {
+    it("does NOT register the three write tools when allowWrites is false", () => {
+        const { server, handlers } = buildServer();
+        registerCustomTools(server as any, { allowWrites: false });
+
+        for (const name of WRITE_TOOLS) {
+            expect(handlers.has(name)).toBe(false);
+        }
+        // Sanity: read-only tools are still registered.
+        expect(handlers.has("list_connectors")).toBe(true);
+        expect(handlers.has("get_account_health_summary")).toBe(true);
+    });
+
+    it("does NOT register the three write tools when no option is passed and env is unset", () => {
+        const prev = process.env.FIVETRAN_ALLOW_WRITES;
+        delete process.env.FIVETRAN_ALLOW_WRITES;
+        try {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any);
+            for (const name of WRITE_TOOLS) {
+                expect(handlers.has(name)).toBe(false);
+            }
+        } finally {
+            if (prev !== undefined) process.env.FIVETRAN_ALLOW_WRITES = prev;
+        }
+    });
+
+    it("registers the three write tools when allowWrites is true", () => {
+        const { server, handlers } = buildServer();
+        registerCustomTools(server as any, { allowWrites: true });
+
+        for (const name of WRITE_TOOLS) {
+            expect(handlers.has(name)).toBe(true);
+        }
+    });
+
+    it("isWriteEnabled accepts the documented truthy whitelist", () => {
+        expect(isWriteEnabled("true")).toBe(true);
+        expect(isWriteEnabled("TRUE")).toBe(true);
+        expect(isWriteEnabled("1")).toBe(true);
+        expect(isWriteEnabled("yes")).toBe(true);
+        expect(isWriteEnabled("YES")).toBe(true);
+        expect(isWriteEnabled(" true ")).toBe(true);
+    });
+
+    it("isWriteEnabled rejects falsy / unrecognized values", () => {
+        expect(isWriteEnabled(undefined)).toBe(false);
+        expect(isWriteEnabled("")).toBe(false);
+        expect(isWriteEnabled("false")).toBe(false);
+        expect(isWriteEnabled("0")).toBe(false);
+        expect(isWriteEnabled("no")).toBe(false);
+        expect(isWriteEnabled("on")).toBe(false);
+        expect(isWriteEnabled("enabled")).toBe(false);
     });
 });

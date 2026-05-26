@@ -41,9 +41,17 @@ FIVETRAN_API_SECRET=your_secret
 
 # Fivetran Activations (Census)
 CENSUS_API_KEY=your_census_key
+
+# Opt in to write tools (create_connector, sync_connector, resync_connector).
+# Defaults to read-only mode when unset. Truthy values: true, 1, yes (case-insensitive).
+FIVETRAN_ALLOW_WRITES=
 ```
 
 You only need the keys for the surfaces you intend to use — missing keys disable the corresponding tool group at startup with a warning.
+
+#### Read-only mode (default)
+
+The server runs in read-only mode unless `FIVETRAN_ALLOW_WRITES` is set to a truthy value (`true`, `1`, or `yes`, case-insensitive). When read-only, the three write tools (`create_connector`, `sync_connector`, `resync_connector`) are not registered and therefore cannot be invoked by the model. All other tools — including everything in `generated_tools.ts` and the Census activations tools — remain available.
 
 #### Required API permissions
 

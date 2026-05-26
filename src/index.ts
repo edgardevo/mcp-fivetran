@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerGeneratedTools } from "./generated_tools.js";
-import { registerCustomTools } from "./custom_tools.js";
+import { registerCustomTools, isWriteEnabled } from "./custom_tools.js";
 import { registerCensusTools } from "./census_tools.js";
 import { makeRequest, makeCensusRequest } from "./common.js";
 
@@ -47,8 +47,13 @@ async function main() {
         version: "0.6.0",
     });
 
+    const allowWrites = isWriteEnabled();
+    if (!allowWrites) {
+        console.error("Write tools disabled. Set FIVETRAN_ALLOW_WRITES=true to enable create_connector, sync_connector, resync_connector.");
+    }
+
     registerGeneratedTools(server);
-    registerCustomTools(server);
+    registerCustomTools(server, { allowWrites });
     registerCensusTools(server);
 
     const transport = new StdioServerTransport();
