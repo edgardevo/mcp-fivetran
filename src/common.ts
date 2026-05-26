@@ -67,15 +67,26 @@ export function redactSensitiveData(data: any): any {
     return data;
 }
 
-export async function makeRequest(
+type ApiRequestOpts = {
+    baseUrl: string;
+    acceptHeader: string;
+    authHeader?: string;
+    errorPrefix: string;
+    requestFailedPrefix: string;
+    rateLimitLogPrefix: string;
+    handleBinary: boolean;
+};
+
+async function makeApiRequest(
     method: string,
     endpoint: string,
+    opts: ApiRequestOpts,
     params?: Record<string, any>,
     body?: any,
     retryCount: number = 0
 ): Promise<any> {
     const url = new URL(
-        endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`
+        endpoint.startsWith("http") ? endpoint : `${opts.baseUrl}${endpoint}`
     );
 
     if (params) {
@@ -88,11 +99,11 @@ export async function makeRequest(
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        Accept: "application/json;version=2", // Fivetran recommends api versioning
+        Accept: opts.acceptHeader,
     };
 
-    if (API_KEY && API_SECRET) {
-        headers["Authorization"] = `Basic ${Buffer.from(`${API_KEY}:${API_SECRET}`).toString("base64")}`;
+    if (opts.authHeader) {
+        headers["Authorization"] = opts.authHeader;
     }
 
     const options: RequestInit = {
@@ -108,37 +119,68 @@ export async function makeRequest(
 
         if (response.status === 429) {
             if (retryCount >= MAX_RATE_LIMIT_RETRIES) {
-                return { error: `HTTP Error: 429 - Rate limited; gave up after ${MAX_RATE_LIMIT_RETRIES} retries.` };
+                return { error: `${opts.errorPrefix}: 429 - Rate limited; gave up after ${MAX_RATE_LIMIT_RETRIES} retries.` };
             }
             const retryAfter = parseInt(response.headers.get("Retry-After") || "1", 10);
-            console.error(`Rate limited. Retrying after ${retryAfter}s (attempt ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES})...`);
+            console.error(`${opts.rateLimitLogPrefix} Retrying after ${retryAfter}s (attempt ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES})...`);
             await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-            return makeRequest(method, endpoint, params, body, retryCount + 1);
+            return makeApiRequest(method, endpoint, opts, params, body, retryCount + 1);
         }
 
         if (!response.ok) {
             const text = await response.text();
             return {
-                error: `HTTP Error: ${response.status} - ${text}`
+                error: `${opts.errorPrefix}: ${response.status} - ${text}`
             };
         }
 
-        const contentType = response.headers.get("content-type") || "";
-        if (contentType.includes("application/octet-stream") || contentType.includes("zip")) {
-            const buffer = await response.arrayBuffer();
-            return {
-                message: "Binary data received (ZIP file).",
-                size: buffer.byteLength,
-                contentType: contentType,
-                info: "Binary data cannot be displayed directly in the chat context."
-            };
+        if (opts.handleBinary) {
+            const contentType = response.headers.get("content-type") || "";
+            if (contentType.includes("application/octet-stream") || contentType.includes("zip")) {
+                const buffer = await response.arrayBuffer();
+                return {
+                    message: "Binary data received (ZIP file).",
+                    size: buffer.byteLength,
+                    contentType: contentType,
+                    info: "Binary data cannot be displayed directly in the chat context."
+                };
+            }
         }
 
         const data = await response.json();
         return redactSensitiveData(data);
     } catch (error: any) {
-        return { error: `Request failed: ${error.message}` };
+        return { error: `${opts.requestFailedPrefix}: ${error.message}` };
     }
+}
+
+export async function makeRequest(
+    method: string,
+    endpoint: string,
+    params?: Record<string, any>,
+    body?: any,
+    retryCount: number = 0
+): Promise<any> {
+    const authHeader = (API_KEY && API_SECRET)
+        ? `Basic ${Buffer.from(`${API_KEY}:${API_SECRET}`).toString("base64")}`
+        : undefined;
+
+    return makeApiRequest(
+        method,
+        endpoint,
+        {
+            baseUrl: BASE_URL,
+            acceptHeader: "application/json;version=2",
+            authHeader,
+            errorPrefix: "HTTP Error",
+            requestFailedPrefix: "Request failed",
+            rateLimitLogPrefix: "Rate limited.",
+            handleBinary: true,
+        },
+        params,
+        body,
+        retryCount,
+    );
 }
 
 export async function makeCensusRequest(
@@ -148,59 +190,24 @@ export async function makeCensusRequest(
     body?: any,
     retryCount: number = 0
 ): Promise<any> {
-    const url = new URL(
-        endpoint.startsWith("http") ? endpoint : `${CENSUS_BASE_URL}${endpoint}`
-    );
-
-    if (params) {
-        for (const [key, value] of Object.entries(params)) {
-            if (value !== undefined && value !== null) {
-                url.searchParams.append(key, String(value));
-            }
-        }
-    }
-
     if (!CENSUS_API_KEY) {
         return { error: "CENSUS_API_KEY environment variable is missing." };
     }
 
-    const headers: Record<string, string> = {
-        "Authorization": `Bearer ${CENSUS_API_KEY}`,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    };
-
-    const options: RequestInit = {
+    return makeApiRequest(
         method,
-        headers,
-    };
-    if (body) {
-        options.body = JSON.stringify(body);
-    }
-
-    try {
-        const response = await fetch(url.toString(), options);
-
-        if (response.status === 429) {
-            if (retryCount >= MAX_RATE_LIMIT_RETRIES) {
-                return { error: `Census HTTP Error: 429 - Rate limited; gave up after ${MAX_RATE_LIMIT_RETRIES} retries.` };
-            }
-            const retryAfter = parseInt(response.headers.get("Retry-After") || "1", 10);
-            console.error(`Census API Rate limited. Retrying after ${retryAfter}s (attempt ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES})...`);
-            await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-            return makeCensusRequest(method, endpoint, params, body, retryCount + 1);
-        }
-
-        if (!response.ok) {
-            const text = await response.text();
-            return {
-                error: `Census HTTP Error: ${response.status} - ${text}`
-            };
-        }
-
-        const data = await response.json();
-        return redactSensitiveData(data);
-    } catch (error: any) {
-        return { error: `Census request failed: ${error.message}` };
-    }
+        endpoint,
+        {
+            baseUrl: CENSUS_BASE_URL,
+            acceptHeader: "application/json",
+            authHeader: `Bearer ${CENSUS_API_KEY}`,
+            errorPrefix: "Census HTTP Error",
+            requestFailedPrefix: "Census request failed",
+            rateLimitLogPrefix: "Census API Rate limited.",
+            handleBinary: false,
+        },
+        params,
+        body,
+        retryCount,
+    );
 }
