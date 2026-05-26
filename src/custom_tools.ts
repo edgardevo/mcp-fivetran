@@ -533,7 +533,9 @@ export function registerCustomTools(server: McpServer) {
                 paused: args.paused,
                 sync_frequency: args.sync_frequency
             };
-            Object.keys(body).forEach(key => (body as any)[key] === undefined && delete (body as any)[key]);
+            for (const key of Object.keys(body)) {
+                if ((body as any)[key] === undefined) delete (body as any)[key];
+            }
 
             const response = await makeRequest("POST", "/connections", undefined, body);
             return {
