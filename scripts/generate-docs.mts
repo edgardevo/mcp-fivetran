@@ -167,7 +167,11 @@ async function main() {
     const census: CollectedTool[] = [];
 
     registerGeneratedTools(makeCollector(generated) as unknown as Parameters<typeof registerGeneratedTools>[0]);
-    registerCustomTools(makeCollector(custom) as unknown as Parameters<typeof registerCustomTools>[0]);
+    // Catalogue all tools regardless of FIVETRAN_ALLOW_WRITES env state.
+    registerCustomTools(
+        makeCollector(custom) as unknown as Parameters<typeof registerCustomTools>[0],
+        { allowWrites: true },
+    );
     registerCensusTools(makeCollector(census) as unknown as Parameters<typeof registerCensusTools>[0]);
 
     const groups: ToolGroup[] = [
