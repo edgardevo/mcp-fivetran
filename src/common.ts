@@ -77,6 +77,12 @@ type ApiRequestOpts = {
     handleBinary: boolean;
 };
 
+export type ApiResponse = {
+    error?: string;
+    data?: any;
+    [k: string]: any;
+};
+
 async function makeApiRequest(
     method: string,
     endpoint: string,
@@ -84,7 +90,7 @@ async function makeApiRequest(
     params?: Record<string, any>,
     body?: any,
     retryCount: number = 0
-): Promise<any> {
+): Promise<ApiResponse> {
     const url = new URL(
         endpoint.startsWith("http") ? endpoint : `${opts.baseUrl}${endpoint}`
     );
@@ -160,7 +166,7 @@ export async function makeRequest(
     params?: Record<string, any>,
     body?: any,
     retryCount: number = 0
-): Promise<any> {
+): Promise<ApiResponse> {
     const authHeader = (API_KEY && API_SECRET)
         ? `Basic ${Buffer.from(`${API_KEY}:${API_SECRET}`).toString("base64")}`
         : undefined;
@@ -189,7 +195,7 @@ export async function makeCensusRequest(
     params?: Record<string, any>,
     body?: any,
     retryCount: number = 0
-): Promise<any> {
+): Promise<ApiResponse> {
     if (!CENSUS_API_KEY) {
         return { error: "CENSUS_API_KEY environment variable is missing." };
     }
