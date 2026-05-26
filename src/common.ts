@@ -1,6 +1,3 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -20,15 +17,46 @@ if (!CENSUS_API_KEY) {
     console.warn("Warning: CENSUS_API_KEY is not set. Activations (Census) tools will fail.");
 }
 
-const SENSITIVE_KEYS = ["password", "secret", "key", "token", "cert", "credential", "auth", "private"];
+const MAX_RATE_LIMIT_RETRIES = 3;
 
-function redactSensitiveData(data: any): any {
+const SENSITIVE_EXACT = new Set<string>([
+    "password", "passwd", "pwd",
+    "secret", "secrets",
+    "token", "tokens",
+    "credential", "credentials",
+    "api_key", "apikey",
+    "private_key", "privatekey",
+    "access_token", "refresh_token", "auth_token", "bearer_token", "id_token", "session_token",
+    "client_secret",
+    "private_certificate",
+    "passphrase",
+    "authorization",
+    "encryption_key",
+    "key",
+]);
+
+const SENSITIVE_SUFFIXES = [
+    "_password", "_passwd", "_pwd",
+    "_secret",
+    "_token",
+    "_credentials", "_credential",
+    "_key",
+    "_passphrase",
+];
+
+export function isSensitiveKey(key: string): boolean {
+    const lower = key.toLowerCase();
+    if (SENSITIVE_EXACT.has(lower)) return true;
+    return SENSITIVE_SUFFIXES.some((suffix) => lower.endsWith(suffix));
+}
+
+export function redactSensitiveData(data: any): any {
     if (Array.isArray(data)) {
         return data.map(redactSensitiveData);
     } else if (data && typeof data === "object") {
         const newData: Record<string, any> = {};
         for (const [key, value] of Object.entries(data)) {
-            if (SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k))) {
+            if (isSensitiveKey(key)) {
                 newData[key] = "[REDACTED]";
             } else {
                 newData[key] = redactSensitiveData(value);
@@ -43,7 +71,8 @@ export async function makeRequest(
     method: string,
     endpoint: string,
     params?: Record<string, any>,
-    body?: any
+    body?: any,
+    retryCount: number = 0
 ): Promise<any> {
     const url = new URL(
         endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`
@@ -78,10 +107,13 @@ export async function makeRequest(
         const response = await fetch(url.toString(), options);
 
         if (response.status === 429) {
+            if (retryCount >= MAX_RATE_LIMIT_RETRIES) {
+                return { error: `HTTP Error: 429 - Rate limited; gave up after ${MAX_RATE_LIMIT_RETRIES} retries.` };
+            }
             const retryAfter = parseInt(response.headers.get("Retry-After") || "1", 10);
-            console.error(`Rate limited. Retrying after ${retryAfter}s...`);
+            console.error(`Rate limited. Retrying after ${retryAfter}s (attempt ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES})...`);
             await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-            return makeRequest(method, endpoint, params, body);
+            return makeRequest(method, endpoint, params, body, retryCount + 1);
         }
 
         if (!response.ok) {
@@ -113,7 +145,8 @@ export async function makeCensusRequest(
     method: string,
     endpoint: string,
     params?: Record<string, any>,
-    body?: any
+    body?: any,
+    retryCount: number = 0
 ): Promise<any> {
     const url = new URL(
         endpoint.startsWith("http") ? endpoint : `${CENSUS_BASE_URL}${endpoint}`
@@ -149,10 +182,13 @@ export async function makeCensusRequest(
         const response = await fetch(url.toString(), options);
 
         if (response.status === 429) {
+            if (retryCount >= MAX_RATE_LIMIT_RETRIES) {
+                return { error: `Census HTTP Error: 429 - Rate limited; gave up after ${MAX_RATE_LIMIT_RETRIES} retries.` };
+            }
             const retryAfter = parseInt(response.headers.get("Retry-After") || "1", 10);
-            console.error(`Census API Rate limited. Retrying after ${retryAfter}s...`);
+            console.error(`Census API Rate limited. Retrying after ${retryAfter}s (attempt ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES})...`);
             await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000));
-            return makeCensusRequest(method, endpoint, params, body);
+            return makeCensusRequest(method, endpoint, params, body, retryCount + 1);
         }
 
         if (!response.ok) {

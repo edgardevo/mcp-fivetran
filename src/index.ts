@@ -44,7 +44,7 @@ async function main() {
     // Initialize Server
     const server = new McpServer({
         name: "dgc-fivetran",
-        version: "0.5.0",
+        version: "0.6.0",
     });
 
     registerGeneratedTools(server);
