@@ -169,11 +169,12 @@ Tests live in `tests/` and cover the redaction logic, JSON flattening for CSV ex
 ## Development
 
 ```bash
-npm run dev       # run from source via tsx (no build step)
-npm run build     # tsc → dist/
-npm run lint      # prek (pre-commit hooks)
-npm run validate  # validate skills/rules frontmatter
-npm run generate  # regenerate src/generated_tools.ts from openapi.json
+npm run dev          # run from source via tsx (no build step)
+npm run build        # tsc → dist/
+npm run lint         # prek (pre-commit hooks)
+npm run validate     # validate skills/rules frontmatter
+npm run generate     # regenerate src/generated_tools.ts from openapi.json
+npm run bump <type>  # bump version (patch|minor|major|x.y.z) in all 3 locations
 ```
 
 ### Adding a new tool
@@ -182,6 +183,19 @@ npm run generate  # regenerate src/generated_tools.ts from openapi.json
 2. **Census tool**: add it in `src/census_tools.ts`.
 3. **Generated tool from a new Fivetran endpoint**: extend `openapi.json` and re-run `npm run generate`; do not hand-edit `src/generated_tools.ts`.
 4. Run `npm test && npm run build` before committing. `prek` hooks run on commit.
+
+### Versioning
+
+The version is hardcoded in three places that must stay in sync: `package.json`, `gemini-extension.json`, and `src/index.ts` (reported to MCP clients during the handshake). `npm run bump <patch|minor|major>` updates all three at once via `scripts/bump-version.mjs`.
+
+To cut a release without touching files by hand, trigger the **Version Bump** GitHub Action (`Actions → Version Bump → Run workflow`, pick patch/minor/major). It runs the bump script, commits, creates a `vX.Y.Z` tag, and pushes.
+
+### CI
+
+GitHub Actions (`.github/workflows/`):
+
+- **CI** (`ci.yml`) — on every push/PR to `main`: builds (`tsc`), runs the Vitest suite, and runs all `prek` hooks (via `uvx prek`).
+- **Version Bump** (`version-bump.yml`) — manual `workflow_dispatch` trigger described above.
 
 ### Project layout
 
