@@ -26,6 +26,9 @@ jobs:
       - name: Run unit tests
         run: npm test
 
+      - name: Run coverage (visibility only, no threshold)
+        run: npm run test:coverage
+
   lint:
     name: prek hooks
     runs-on: ubuntu-latest
