@@ -128,6 +128,8 @@ Once installed, try asking the model:
 
 ## Tool catalogue
 
+See [DOCS.md](DOCS.md) for the auto-generated reference of every tool, its description, and its parameters (regenerate with `npm run docs`).
+
 Tools are registered in three groups (see `src/`):
 
 ### Custom audit & operations (`src/custom_tools.ts`)
