@@ -46,7 +46,7 @@ async function main() {
     // Initialize Server
     const server = new McpServer({
         name: "dgc-fivetran",
-        version: "0.8.0",
+        version: "0.9.0",
     });
 
     const allowWrites = isWriteEnabled();
