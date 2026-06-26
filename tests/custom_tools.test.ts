@@ -33,6 +33,10 @@ const WRITE_TOOLS = [
     "sync_connector",
     "resync_connector",
     "run_connection_tests",
+    "update_schema_config",
+    "update_database_schema_config",
+    "update_table_config",
+    "update_column_config",
 ] as const;
 
 type Handler = (args: any) => Promise<any>;
@@ -191,6 +195,80 @@ describe("run_connection_tests", () => {
 
         const [, , , body] = vi.mocked(makeRequest).mock.calls[0];
         expect(body).toEqual({ trust_certificates: true });
+    });
+});
+
+describe("schema-config write tools", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        vi.mocked(makeRequest).mockResolvedValue({ data: {} });
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("update_schema_config PATCHes /schemas and strips undefined fields", async () => {
+        await handlers.get("update_schema_config")!({
+            connector_id: "c1",
+            schema_change_handling: "BLOCK_ALL",
+        });
+
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("PATCH");
+        expect(path).toBe("/connections/c1/schemas");
+        expect(query).toBeUndefined();
+        expect(body).toEqual({ schema_change_handling: "BLOCK_ALL" });
+    });
+
+    it("update_database_schema_config PATCHes /schemas/{schema}", async () => {
+        await handlers.get("update_database_schema_config")!({
+            connector_id: "c1",
+            schema: "public",
+            enabled: false,
+        });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("PATCH");
+        expect(path).toBe("/connections/c1/schemas/public");
+        expect(body).toEqual({ enabled: false });
+    });
+
+    it("update_table_config PATCHes the table path and keeps explicit false", async () => {
+        await handlers.get("update_table_config")!({
+            connector_id: "c1",
+            schema: "public",
+            table: "orders",
+            enabled: false,
+            // sync_mode and columns omitted
+        });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("PATCH");
+        expect(path).toBe("/connections/c1/schemas/public/tables/orders");
+        expect(body).toEqual({ enabled: false });
+        expect(body).not.toHaveProperty("sync_mode");
+        expect(body).not.toHaveProperty("columns");
+    });
+
+    it("update_column_config PATCHes the column path with the given flags", async () => {
+        await handlers.get("update_column_config")!({
+            connector_id: "c1",
+            schema: "public",
+            table: "orders",
+            column: "email",
+            enabled: true,
+            hashed: true,
+        });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("PATCH");
+        expect(path).toBe("/connections/c1/schemas/public/tables/orders/columns/email");
+        expect(body).toEqual({ enabled: true, hashed: true });
+        expect(body).not.toHaveProperty("is_primary_key");
     });
 });
 

@@ -105,7 +105,7 @@ can't currently perform.
 - [x] **3.2 ✨ `run_connection_tests`** — `POST /connections/{id}/test`.
   `analyze_connector_issues` reads failed setup tests but can't re-run them.
 
-- [ ] **3.3 ✨ Schema-config writes — the single biggest functional gap.**
+- [x] **3.3 ✨ Schema-config writes — the single biggest functional gap.**
   Enable/disable tables & columns. Read counterparts already exist.
   - `PATCH /connections/{id}/schemas` (whole config)
   - `PATCH /connections/{id}/schemas/{schema}`

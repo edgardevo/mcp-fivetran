@@ -2,10 +2,10 @@
 
 Auto-generated from the live tool registry. Do not edit by hand — run `npm run docs` to regenerate.
 
-**Total tools:** 89
+**Total tools:** 93
 
 **Sections:**
-- [Custom audit & operations](#custom-audit-operations) — 17 tools
+- [Custom audit & operations](#custom-audit-operations) — 21 tools
 - [Fivetran REST API (generated)](#fivetran-rest-api-generated) — 63 tools
 - [Census Activations](#census-activations) — 9 tools
 
@@ -13,7 +13,7 @@ Auto-generated from the live tool registry. Do not edit by hand — run `npm run
 
 Hand-written audit, lineage, export, and operational tools. Source: `src/custom_tools.ts`.
 
-_17 tools._
+_21 tools._
 
 ### `test_connection`
 
@@ -187,6 +187,63 @@ Re-runs the setup tests for a connector to diagnose connectivity/credential issu
 | `connector_id` | string | The unique identifier for the connector. |
 | `trust_certificates` | boolean, optional | Trust the certificate presented by the source during the test. |
 | `trust_fingerprints` | boolean, optional | Trust the SSH fingerprint presented by the source during the test. |
+
+### `update_schema_config`
+
+Updates a connector's overall schema config: schema change handling and per-schema enable/disable. Maps to PATCH /connections/{id}/schemas.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `schema_change_handling` | string, optional | How to handle new schemas/tables/columns: 'ALLOW_ALL', 'ALLOW_COLUMNS', or 'BLOCK_ALL'. |
+| `is_type_locked` | boolean, optional | Whether column types are locked against automatic changes. |
+| `schemas` | any, optional | A map of schema name → schema config object (e.g. { my_schema: { enabled: false } }). |
+
+### `update_database_schema_config`
+
+Enables/disables a single schema and/or sets its table configs. Maps to PATCH /connections/{id}/schemas/{schema}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `schema` | string | The schema name. |
+| `enabled` | boolean, optional | Whether the schema is enabled for syncing. |
+| `tables` | any, optional | A map of table name → table config object (e.g. { orders: { enabled: true } }). |
+
+### `update_table_config`
+
+Enables/disables a table or changes its sync mode / column configs. Maps to PATCH /connections/{id}/schemas/{schema}/tables/{table}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `schema` | string | The schema name. |
+| `table` | string | The table name. |
+| `enabled` | boolean, optional | Whether the table is enabled for syncing. |
+| `sync_mode` | string, optional | The table sync mode (e.g. 'SOFT_DELETE', 'HISTORY', 'LIVE'). |
+| `columns` | any, optional | A map of column name → column config object. |
+
+### `update_column_config`
+
+Enables/disables a column, toggles hashing, or marks it a primary key. Maps to PATCH /connections/{id}/schemas/{schema}/tables/{table}/columns/{column}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `schema` | string | The schema name. |
+| `table` | string | The table name. |
+| `column` | string | The column name. |
+| `enabled` | boolean, optional | Whether the column is enabled for syncing. |
+| `hashed` | boolean, optional | Whether the column value is hashed in the destination. |
+| `is_primary_key` | boolean, optional | Whether the column is treated as a primary key. |
 
 ## Fivetran REST API (generated)
 

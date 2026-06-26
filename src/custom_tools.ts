@@ -605,4 +605,82 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
             return toToolResult(response);
         }
     );
+
+    // --- Schema config (enable/disable schemas, tables, columns) ---
+
+    function stripUndefined(obj: Record<string, any>): Record<string, any> {
+        for (const key of Object.keys(obj)) {
+            if (obj[key] === undefined) delete obj[key];
+        }
+        return obj;
+    }
+
+    server.tool(
+        "update_schema_config",
+        "Updates a connector's overall schema config: schema change handling and per-schema enable/disable. Maps to PATCH /connections/{id}/schemas.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            schema_change_handling: z.string().optional().describe("How to handle new schemas/tables/columns: 'ALLOW_ALL', 'ALLOW_COLUMNS', or 'BLOCK_ALL'."),
+            is_type_locked: z.boolean().optional().describe("Whether column types are locked against automatic changes."),
+            schemas: z.any().optional().describe("A map of schema name → schema config object (e.g. { my_schema: { enabled: false } }).")
+        },
+        async ({ connector_id, schema_change_handling, is_type_locked, schemas }) => {
+            const body = stripUndefined({ schema_change_handling, is_type_locked, schemas });
+            const response = await makeRequest("PATCH", `/connections/${connector_id}/schemas`, undefined, body);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "update_database_schema_config",
+        "Enables/disables a single schema and/or sets its table configs. Maps to PATCH /connections/{id}/schemas/{schema}.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            schema: z.string().describe("The schema name."),
+            enabled: z.boolean().optional().describe("Whether the schema is enabled for syncing."),
+            tables: z.any().optional().describe("A map of table name → table config object (e.g. { orders: { enabled: true } }).")
+        },
+        async ({ connector_id, schema, enabled, tables }) => {
+            const body = stripUndefined({ enabled, tables });
+            const response = await makeRequest("PATCH", `/connections/${connector_id}/schemas/${schema}`, undefined, body);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "update_table_config",
+        "Enables/disables a table or changes its sync mode / column configs. Maps to PATCH /connections/{id}/schemas/{schema}/tables/{table}.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            schema: z.string().describe("The schema name."),
+            table: z.string().describe("The table name."),
+            enabled: z.boolean().optional().describe("Whether the table is enabled for syncing."),
+            sync_mode: z.string().optional().describe("The table sync mode (e.g. 'SOFT_DELETE', 'HISTORY', 'LIVE')."),
+            columns: z.any().optional().describe("A map of column name → column config object.")
+        },
+        async ({ connector_id, schema, table, enabled, sync_mode, columns }) => {
+            const body = stripUndefined({ enabled, sync_mode, columns });
+            const response = await makeRequest("PATCH", `/connections/${connector_id}/schemas/${schema}/tables/${table}`, undefined, body);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "update_column_config",
+        "Enables/disables a column, toggles hashing, or marks it a primary key. Maps to PATCH /connections/{id}/schemas/{schema}/tables/{table}/columns/{column}.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            schema: z.string().describe("The schema name."),
+            table: z.string().describe("The table name."),
+            column: z.string().describe("The column name."),
+            enabled: z.boolean().optional().describe("Whether the column is enabled for syncing."),
+            hashed: z.boolean().optional().describe("Whether the column value is hashed in the destination."),
+            is_primary_key: z.boolean().optional().describe("Whether the column is treated as a primary key.")
+        },
+        async ({ connector_id, schema, table, column, enabled, hashed, is_primary_key }) => {
+            const body = stripUndefined({ enabled, hashed, is_primary_key });
+            const response = await makeRequest("PATCH", `/connections/${connector_id}/schemas/${schema}/tables/${table}/columns/${column}`, undefined, body);
+            return toToolResult(response);
+        }
+    );
 }
