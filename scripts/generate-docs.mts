@@ -182,7 +182,7 @@ async function main() {
         },
         {
             title: "Fivetran REST API (generated)",
-            blurb: "Read-only Fivetran tools auto-generated from `openapi.json`. Source: `src/generated_tools.ts` (do not edit by hand — regenerate with `npm run generate`).",
+            blurb: "Read-only Fivetran tools derived from `openapi.json`. Source: `src/generated_tools.ts`.",
             tools: generated,
         },
         {

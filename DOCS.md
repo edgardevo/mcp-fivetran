@@ -190,7 +190,7 @@ Re-runs the setup tests for a connector to diagnose connectivity/credential issu
 
 ## Fivetran REST API (generated)
 
-Read-only Fivetran tools auto-generated from `openapi.json`. Source: `src/generated_tools.ts` (do not edit by hand — regenerate with `npm run generate`).
+Read-only Fivetran tools derived from `openapi.json`. Source: `src/generated_tools.ts`.
 
 _63 tools._
 

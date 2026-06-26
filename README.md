@@ -152,7 +152,7 @@ Tools are registered in three groups (see `src/`):
 ### Census Activations (`src/census_tools.ts`)
 `activations_list_workspaces`, `activations_get_workspace`, `activations_list_users`, `activations_list_syncs`, `activations_get_sync`, `activations_list_sync_runs`, `activations_get_sync_run`, `activations_list_sources`, `activations_list_destinations`.
 
-To regenerate the Fivetran API tools after an OpenAPI spec update: `npm run generate`.
+The generated Fivetran API tools in `src/generated_tools.ts` are derived from `openapi.json`. The original code generator is not bundled in this repo; update `generated_tools.ts` to match `openapi.json` when the spec changes (keep the `toToolResult(response)` return pattern used by the existing tools).
 
 ## Bundled extension assets
 
@@ -183,7 +183,7 @@ npm run dev          # run from source via tsx (no build step)
 npm run build        # tsc → dist/
 npm run lint         # prek (pre-commit hooks)
 npm run validate     # validate skills/rules frontmatter
-npm run generate     # regenerate src/generated_tools.ts from openapi.json
+npm run docs         # regenerate DOCS.md from the tool registry
 npm run bump <type>  # bump version (patch|minor|major|x.y.z) in all 3 locations
 ```
 
@@ -191,7 +191,7 @@ npm run bump <type>  # bump version (patch|minor|major|x.y.z) in all 3 locations
 
 1. **Custom tool** (audit, lineage, multi-step logic): add a `server.tool(...)` call in `src/custom_tools.ts`.
 2. **Census tool**: add it in `src/census_tools.ts`.
-3. **Generated tool from a new Fivetran endpoint**: extend `openapi.json` and re-run `npm run generate`; do not hand-edit `src/generated_tools.ts`.
+3. **Generated tool from a new Fivetran endpoint**: add it to `openapi.json` and mirror the change in `src/generated_tools.ts`, following the existing tool pattern (Zod params + `toToolResult(response)`).
 4. Run `npm test && npm run build` before committing. `prek` hooks run on commit.
 
 ### Versioning
@@ -223,7 +223,8 @@ GitHub Actions (`.github/workflows/`):
 ├── references/             # Report/audit templates referenced by skills
 ├── commands/fivetran/      # Gemini CLI slash command definitions (.toml)
 ├── scripts/
-│   ├── generate_mcp_tools_ts.py  # OpenAPI → generated_tools.ts
+│   ├── generate-docs.mts         # Tool registry → DOCS.md
+│   ├── bump-version.mjs          # Version bump across the 3 locations
 │   └── validate-template.mjs     # Skills/rules frontmatter validation
 ├── openapi.json            # Fivetran REST API spec (source for generated tools)
 ├── openapi_census.json     # Census API spec

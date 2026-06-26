@@ -55,7 +55,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   connection blocks the tool — and the stdio server — indefinitely.
   → Add `AbortSignal.timeout(~30s)`; surface a clean timeout error.
 
-- [ ] **1.6 🐞 Broken `npm run generate` script.** `package.json` references
+- [x] **1.6 🐞 Broken `npm run generate` script.** `package.json` references
   `python3 scripts/generate_mcp_tools_ts.py`, which does not exist in the repo.
   → Either commit the generator or remove the script. Decide the source of truth
   for `generated_tools.ts` (regenerate-from-`openapi.json` vs. hand-maintained).
