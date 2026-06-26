@@ -417,6 +417,96 @@ describe("analyze_connector_issues", () => {
     });
 });
 
+describe("find_connector_by_table", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        vi.mocked(fetchAllPages).mockReset();
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("matches across all connectors, skips paused, and reports scan stats", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 1, truncated: false,
+            items: [
+                { id: "c1", schema: "conn1", service: "postgres", paused: false },
+                { id: "c2", schema: "conn2", service: "mysql", paused: true },
+                { id: "c3", schema: "conn3", service: "stripe", paused: false },
+            ],
+        });
+        vi.mocked(makeRequest).mockImplementation(async (_m: string, path: string) => {
+            if (path === "/connections/c1/schemas") {
+                return { data: { schemas: { public: { tables: { orders: { enabled: true } } } } } };
+            }
+            return { data: { schemas: {} } };
+        });
+
+        const handler = handlers.get("find_connector_by_table")!;
+        const payload = asJSON(await handler({ table_name: "orders" }));
+
+        expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith("/connections");
+        // c2 is paused → never queried
+        expect(makeRequest).toHaveBeenCalledTimes(2);
+        expect(payload.matches).toEqual([
+            {
+                connector_id: "c1",
+                connector_name: "conn1",
+                service: "postgres",
+                destination_schema: "public",
+                table_name: "orders",
+                enabled: true,
+            },
+        ]);
+        expect(payload.connectors_scanned).toBe(2);
+        expect(payload.active_connectors).toBe(2);
+        expect(payload.truncated).toBe(false);
+    });
+
+    it("stops at the scan limit and surfaces truncation instead of silently cutting off", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 1, truncated: false,
+            items: [
+                { id: "c1", schema: "a", service: "x", paused: false },
+                { id: "c2", schema: "b", service: "y", paused: false },
+                { id: "c3", schema: "c", service: "z", paused: false },
+            ],
+        });
+        vi.mocked(makeRequest).mockResolvedValue({ data: { schemas: {} } });
+
+        const handler = handlers.get("find_connector_by_table")!;
+        const payload = asJSON(await handler({ table_name: "missing", limit: 2 }));
+
+        // Only the first 2 active connectors scanned; the 3rd is not queried.
+        expect(makeRequest).toHaveBeenCalledTimes(2);
+        expect(payload.connectors_scanned).toBe(2);
+        expect(payload.active_connectors).toBe(3);
+        expect(payload.truncated).toBe(true);
+        expect(payload.note).toMatch(/limit/i);
+    });
+
+    it("collects more than five matches (no hard 5-result cap)", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 1, truncated: false,
+            items: Array.from({ length: 6 }, (_, i) => ({
+                id: `c${i}`, schema: `conn${i}`, service: "postgres", paused: false,
+            })),
+        });
+        vi.mocked(makeRequest).mockResolvedValue({
+            data: { schemas: { public: { tables: { widgets: { enabled: true } } } } },
+        });
+
+        const handler = handlers.get("find_connector_by_table")!;
+        const payload = asJSON(await handler({ table_name: "widgets", limit: 50 }));
+
+        expect(payload.matches).toHaveLength(6);
+    });
+});
+
 describe("export_audit_report", () => {
     let handlers: Map<string, Handler>;
 

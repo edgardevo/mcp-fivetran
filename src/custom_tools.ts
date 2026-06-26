@@ -470,55 +470,56 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
     server.tool(
         "find_connector_by_table",
-        "Searches all connectors to find which one is responsible for syncing a specific table name. Warning: This tool may make multiple API calls and take some time.",
+        "Searches connectors to find which one syncs a specific table. Makes one schema API call per active (non-paused) connector, scanning up to `limit` connectors (newest pages first). Returns all matches plus scan stats; if more active connectors exist than the limit, the result is flagged as truncated. Warning: can be slow on large accounts.",
         {
-            table_name: z.string().describe("The name of the table to search for.")
+            table_name: z.string().describe("The name of the table to search for."),
+            limit: z.number().optional().default(50).describe("Maximum number of active connectors to scan (default 50). Increase to cover larger accounts at the cost of more API calls.")
         },
-        async ({ table_name }) => {
-            const connectionsResp = await makeRequest("GET", "/connections");
-            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
+        async ({ table_name, limit }) => {
+            const scanLimit = limit ?? 50;
+            const connectionsResp = await fetchAllPages("/connections");
+            if ("error" in connectionsResp) return toToolResult(connectionsResp);
 
-            const items = connectionsResp.data?.items || [];
-            const results = [];
+            const active = connectionsResp.items.filter((c: any) => !c.paused);
+            const matches: any[] = [];
+            let scanned = 0;
 
-            // We filter by name first to minimize calls if possible,
-            // but usually we need to check schemas.
-            // For now, we'll check the first 10 active connectors to be safe,
-            // or just the ones whose schema name matches the table name or prefix.
-            for (const c of items) {
-                if (c.paused) continue;
+            for (const c of active) {
+                if (scanned >= scanLimit) break;
+                scanned++;
 
-                // Heuristic: check if schema config exists
                 const schemaResp = await makeRequest("GET", `/connections/${c.id}/schemas`);
                 if (schemaResp.error) continue;
 
                 const schemas = schemaResp.data?.schemas || {};
                 for (const schemaName in schemas) {
                     const tables = schemas[schemaName].tables || {};
-                    if (tables.hasOwnProperty(table_name)) {
-                        results.push({
+                    if (Object.prototype.hasOwnProperty.call(tables, table_name)) {
+                        matches.push({
                             connector_id: c.id,
                             connector_name: c.schema,
                             service: c.service,
                             destination_schema: schemaName,
-                            table_name: table_name,
+                            table_name,
                             enabled: tables[table_name].enabled
                         });
                     }
                 }
-
-                // Limit to avoid hitting rate limits or taking too long
-                if (results.length >= 5) break;
             }
 
-            return {
-                content: [{
-                    type: "text",
-                    text: results.length > 0
-                        ? JSON.stringify(results, null, 2)
-                        : `No connector found syncing table: ${table_name}`
-                }]
+            const truncated = active.length > scanned;
+            const result: Record<string, any> = {
+                table_name,
+                matches,
+                connectors_scanned: scanned,
+                active_connectors: active.length,
+                truncated,
             };
+            if (truncated) {
+                result.note = `Scanned the first ${scanned} of ${active.length} active connectors (scan limit ${scanLimit}). Increase 'limit' to scan more.`;
+            }
+
+            return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
         }
     );
 

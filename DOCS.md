@@ -115,13 +115,14 @@ Performs a deep-dive into connectors with high failure rates or persistent setup
 
 ### `find_connector_by_table`
 
-Searches all connectors to find which one is responsible for syncing a specific table name. Warning: This tool may make multiple API calls and take some time.
+Searches connectors to find which one syncs a specific table. Makes one schema API call per active (non-paused) connector, scanning up to `limit` connectors (newest pages first). Returns all matches plus scan stats; if more active connectors exist than the limit, the result is flagged as truncated. Warning: can be slow on large accounts.
 
 **Parameters:**
 
 | Name | Type | Description |
 | --- | --- | --- |
 | `table_name` | string | The name of the table to search for. |
+| `limit` | number, optional, default=50 | Maximum number of active connectors to scan (default 50). Increase to cover larger accounts at the cost of more API calls. |
 
 ### `create_connector`
 

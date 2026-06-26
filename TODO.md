@@ -37,7 +37,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   → Wrap the error path so any response carrying `.error` returns
   `{ content: [...], isError: true }`. Centralize the response formatting.
 
-- [ ] **1.3 🐞 `find_connector_by_table` — misleading comment + silent truncation.**
+- [x] **1.3 🐞 `find_connector_by_table` — misleading comment + silent truncation.**
   Comment claims "first 10 active connectors" but the code iterates *all*
   connectors (one sequential schema call each — slow, rate-limit-prone) and stops
   only after 5 *results*, silently missing matches.
