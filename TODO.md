@@ -44,7 +44,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   → Fix the comment to match behavior, surface "stopped early / N scanned" in the
   output, and consider bounding the connector scan explicitly.
 
-- [ ] **1.4 🐞 `export_fivetran_data` first-page logic is convoluted and slightly
+- [x] **1.4 🐞 `export_fivetran_data` first-page logic is convoluted and slightly
   buggy.** When the response has no `items` array it pushes the whole response
   wrapper as a single "row"; the `limit` param is documented as a page-count cap
   but per-request size is hardcoded to 100.

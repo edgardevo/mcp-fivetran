@@ -545,6 +545,82 @@ describe("export_audit_report", () => {
     });
 });
 
+describe("export_fivetran_data", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(fetchAllPages).mockReset();
+        vi.mocked(fs.writeFileSync).mockClear();
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("exports all paginated items to a CSV file and reports the row count", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 2, truncated: false,
+            items: [{ id: 1, name: "a" }, { id: 2, name: "b" }],
+        });
+
+        const handler = handlers.get("export_fivetran_data")!;
+        const response = await handler({ endpoint: "/users" });
+
+        expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith("/users", {}, { maxPages: 1000 });
+        expect(vi.mocked(fs.writeFileSync)).toHaveBeenCalledTimes(1);
+        const [filepath, content] = vi.mocked(fs.writeFileSync).mock.calls[0];
+        expect(String(filepath)).toMatch(/users_\d+\.csv$/);
+        expect(String(content)).toContain("id,name");
+        expect(response.content[0].text).toMatch(/Rows exported: 2/);
+    });
+
+    it("writes a JSON array when format is json", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 1, truncated: false, items: [{ id: 1 }],
+        });
+
+        const handler = handlers.get("export_fivetran_data")!;
+        await handler({ endpoint: "/users", format: "json" });
+
+        const [filepath, content] = vi.mocked(fs.writeFileSync).mock.calls[0];
+        expect(String(filepath)).toMatch(/\.json$/);
+        expect(JSON.parse(String(content))).toEqual([{ id: 1 }]);
+    });
+
+    it("passes max_pages through and warns when the export is truncated", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 5, truncated: true, items: [{ id: 1 }],
+        });
+
+        const handler = handlers.get("export_fivetran_data")!;
+        const response = await handler({ endpoint: "/users", max_pages: 5 });
+
+        expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith("/users", {}, { maxPages: 5 });
+        expect(response.content[0].text).toMatch(/truncat/i);
+    });
+
+    it("surfaces an error and writes no file when the fetch fails", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({ error: "HTTP Error: 403 - forbidden" });
+
+        const handler = handlers.get("export_fivetran_data")!;
+        const response = await handler({ endpoint: "/users" });
+
+        expect(response.isError).toBe(true);
+        expect(vi.mocked(fs.writeFileSync)).not.toHaveBeenCalled();
+    });
+
+    it("reports no data and writes no file when there are no items", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({ pages: 1, truncated: false, items: [] });
+
+        const handler = handlers.get("export_fivetran_data")!;
+        const response = await handler({ endpoint: "/users" });
+
+        expect(response.content[0].text).toMatch(/No data/i);
+        expect(vi.mocked(fs.writeFileSync)).not.toHaveBeenCalled();
+    });
+});
+
 describe("write-tool gating via FIVETRAN_ALLOW_WRITES", () => {
     it("does NOT register the gated write tools when allowWrites is false", () => {
         const { server, handlers } = buildServer();

@@ -191,55 +191,23 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
     server.tool(
         "export_fivetran_data",
-        "Exports data from a Fivetran endpoint to a file (CSV or JSON). Automatically handles pagination.",
+        "Exports every page of a paginated Fivetran list endpoint to a file (CSV or JSON). Pagination is handled automatically; intended for list endpoints that return a `data.items` array.",
         {
             endpoint: z.string().describe("The API endpoint to export (e.g., '/users')"),
-            limit: z.number().optional().default(1000).describe("Safety limit on total pages"),
+            max_pages: z.number().optional().default(1000).describe("Safety cap on the number of pages fetched (each page is up to 100 records). If hit, the export is flagged as truncated."),
             format: z.enum(["csv", "json"]).optional().default("csv").describe("The export format: 'csv' or 'json'"),
         },
-        async ({ endpoint, limit, format }) => {
-            let allItems: any[] = [];
-            let cursor: string | null = null;
-            let pageCount = 0;
+        async ({ endpoint, max_pages, format }) => {
+            const maxPages = max_pages ?? 1000;
+            const fmt = format ?? "csv";
+            console.error(`Starting ${fmt} export for ${endpoint}...`);
 
-            console.error(`Starting ${format} export for ${endpoint}...`);
-
-            // Initial request
-            let response = await makeRequest("GET", endpoint, { limit: 100 });
-            if (response.error) {
-                return { content: [{ type: "text", text: `Export failed: ${response.error}` }] };
+            const result = await fetchAllPages(endpoint, {}, { maxPages });
+            if ("error" in result) {
+                return toToolResult({ error: `Export failed: ${result.error}` });
             }
 
-            let data = response.data || {};
-            // Handle list vs dict response
-            let items = Array.isArray(data.items) ? data.items : (data ? [data] : []);
-            if (!Array.isArray(data.items) && !data.items && Array.isArray(data)) {
-                items = data;
-            }
-
-            allItems.push(...items);
-            cursor = data.next_cursor || null;
-
-            while (cursor && pageCount < limit) {
-                pageCount++;
-                if (pageCount % 10 === 0) {
-                    console.error(`Fetching page ${pageCount}...`);
-                }
-
-                response = await makeRequest("GET", endpoint, { cursor, limit: 100 });
-                if (response.error) {
-                    console.error(`Warning: Error fetching page ${pageCount}: ${response.error}`);
-                    break;
-                }
-
-                data = response.data || {};
-                const newItems = data.items || [];
-                if (newItems.length === 0) break;
-
-                allItems.push(...newItems);
-                cursor = data.next_cursor;
-            }
-
+            const allItems = result.items;
             if (allItems.length === 0) {
                 return { content: [{ type: "text", text: "No data found to export." }] };
             }
@@ -253,11 +221,11 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
             // Filename
             const sanitizedEndpoint = endpoint.replace(/^\//, "").replace(/\//g, "_");
             const timestamp = Math.floor(Date.now() / 1000);
-            const filename = `${sanitizedEndpoint}_${timestamp}.${format}`;
+            const filename = `${sanitizedEndpoint}_${timestamp}.${fmt}`;
             const filepath = path.join(exportDir, filename);
 
             let fileContent: string;
-            if (format === "csv") {
+            if (fmt === "csv") {
                 console.error(`Flattening ${allItems.length} records for CSV...`);
                 const flatItems = allItems.map(i => flatten(i));
                 fileContent = stringify(flatItems, { header: true });
@@ -267,11 +235,15 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
             fs.writeFileSync(filepath, fileContent);
 
+            const truncationNote = result.truncated
+                ? `\nWARNING: Export was truncated at the ${maxPages}-page cap; more data may exist. Re-run with a higher 'max_pages'.`
+                : "";
+
             return {
                 content: [
                     {
                         type: "text",
-                        text: `Export successful! File saved to: ${filepath}\nRows exported: ${allItems.length}\nFormat: ${format}`,
+                        text: `Export successful! File saved to: ${filepath}\nRows exported: ${allItems.length}\nPages fetched: ${result.pages}\nFormat: ${fmt}${truncationNote}`,
                     },
                 ],
             };

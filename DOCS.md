@@ -41,14 +41,14 @@ Fetches the next page of results for a Fivetran endpoint.
 
 ### `export_fivetran_data`
 
-Exports data from a Fivetran endpoint to a file (CSV or JSON). Automatically handles pagination.
+Exports every page of a paginated Fivetran list endpoint to a file (CSV or JSON). Pagination is handled automatically; intended for list endpoints that return a `data.items` array.
 
 **Parameters:**
 
 | Name | Type | Description |
 | --- | --- | --- |
 | `endpoint` | string | The API endpoint to export (e.g., '/users') |
-| `limit` | number, optional, default=1000 | Safety limit on total pages |
+| `max_pages` | number, optional, default=1000 | Safety cap on the number of pages fetched (each page is up to 100 records). If hit, the export is flagged as truncated. |
 | `format` | enum("csv" \| "json"), optional, default="csv" | The export format: 'csv' or 'json' |
 
 ### `get_connector_details`
