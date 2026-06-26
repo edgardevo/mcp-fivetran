@@ -18,6 +18,7 @@ if (!CENSUS_API_KEY) {
 }
 
 const MAX_RATE_LIMIT_RETRIES = 3;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 const SENSITIVE_EXACT = new Set<string>([
     "password", "passwd", "pwd",
@@ -115,6 +116,7 @@ async function makeApiRequest(
     const options: RequestInit = {
         method,
         headers,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     };
     if (body) {
         options.body = JSON.stringify(body);
@@ -156,6 +158,9 @@ async function makeApiRequest(
         const data = await response.json();
         return redactSensitiveData(data);
     } catch (error: any) {
+        if (error?.name === "TimeoutError") {
+            return { error: `${opts.requestFailedPrefix}: request timed out after ${REQUEST_TIMEOUT_MS / 1000}s` };
+        }
         return { error: `${opts.requestFailedPrefix}: ${error.message}` };
     }
 }
@@ -187,6 +192,64 @@ export async function makeRequest(
         body,
         retryCount,
     );
+}
+
+/**
+ * Wraps an API response in the MCP tool-result shape, flagging `isError: true`
+ * when the response carries an `.error` so the host/model can distinguish a
+ * failure from real data.
+ */
+export function toToolResult(response: any): { content: { type: "text"; text: string }[]; isError?: boolean } {
+    const text = typeof response === "string" ? response : JSON.stringify(response, null, 2);
+    const result: { content: { type: "text"; text: string }[]; isError?: boolean } = {
+        content: [{ type: "text", text }],
+    };
+    if (response && typeof response === "object" && response.error) {
+        result.isError = true;
+    }
+    return result;
+}
+
+export type PaginatedResult =
+    | { items: any[]; pages: number; truncated: boolean }
+    | { error: string };
+
+/**
+ * Fetches every page of a cursor-paginated Fivetran list endpoint, following
+ * `data.next_cursor` until exhausted. Fails loud: if any page errors, the error
+ * is returned instead of a silently-partial result (important for audit tools).
+ */
+export async function fetchAllPages(
+    endpoint: string,
+    params: Record<string, any> = {},
+    opts: { pageSize?: number; maxPages?: number } = {}
+): Promise<PaginatedResult> {
+    const pageSize = opts.pageSize ?? 100;
+    const maxPages = opts.maxPages ?? 1000;
+
+    const items: any[] = [];
+    let cursor: string | undefined;
+    let pages = 0;
+
+    while (pages < maxPages) {
+        const pageParams = { ...params, limit: pageSize, ...(cursor ? { cursor } : {}) };
+        const response = await makeRequest("GET", endpoint, pageParams);
+        if (response.error) {
+            return { error: response.error };
+        }
+        pages++;
+
+        const data = response.data || {};
+        const pageItems = Array.isArray(data.items) ? data.items : [];
+        items.push(...pageItems);
+
+        cursor = data.next_cursor || undefined;
+        if (!cursor) {
+            return { items, pages, truncated: false };
+        }
+    }
+
+    return { items, pages, truncated: true };
 }
 
 export async function makeCensusRequest(

@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { makeRequest } from "./common.js";
+import { makeRequest, toToolResult } from "./common.js";
 
 export function registerGeneratedTools(server: McpServer) {
   server.tool(
@@ -16,7 +16,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/users/${args.userid}/groups`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -28,7 +28,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/groups/${args.groupid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -40,7 +40,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/account/info`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -58,7 +58,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/hybrid-deployment-agents`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -75,7 +75,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/teams/${args.teamid}/groups`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -91,7 +91,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/metadata/connector-types`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -104,7 +104,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/teams/${args.teamid}/groups/${args.groupid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -121,7 +121,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/connections/${args.connectionid}/fingerprints`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -141,7 +141,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/transformations/package-metadata`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -155,7 +155,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connections/${args.connectionid}/schemas/${args.schema}/tables/${args.table}/columns`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -172,7 +172,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/destinations/${args.destinationid}/fingerprints`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -185,7 +185,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connections/${args.connectionid}/certificates/${args.hash}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -198,7 +198,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/teams/${args.teamid}/connections/${args.connectionid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -210,7 +210,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connections/${args.connectionid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -229,7 +229,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/groups/${args.groupid}/connections`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -242,7 +242,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/destinations/${args.destinationid}/certificates/${args.hash}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -254,7 +254,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connections/${args.connectionid}/schemas`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -271,7 +271,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/destinations/${args.destinationid}/certificates`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -287,7 +287,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/connector-sdk/packages`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -307,7 +307,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/connections`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -323,7 +323,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/webhooks`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -335,7 +335,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/groups/${args.groupid}/public-key`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -347,7 +347,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/transformations/package-metadata/${args.package_definition_id}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -364,7 +364,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/proxy/${args.agentid}/connections`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -380,7 +380,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/groups`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -393,7 +393,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connections/${args.connectionid}/fingerprints/${args.hash}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -405,7 +405,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/private-links/${args.privatelinkid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -421,7 +421,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/system-keys`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -437,7 +437,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/roles`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -449,7 +449,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/public/connector-types`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -466,7 +466,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/connections/${args.connectionid}/certificates`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -482,7 +482,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/destinations`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -499,7 +499,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/users/${args.userid}/connections`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -512,7 +512,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/destinations/${args.destinationid}/fingerprints/${args.hash}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -524,7 +524,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/system-keys/${args.keyid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -536,7 +536,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/external-logging/${args.logid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -552,7 +552,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/transformation-projects`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -565,7 +565,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/teams/${args.teamid}/users/${args.userid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -577,7 +577,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/teams/${args.teamid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -589,7 +589,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/transformations/${args.transformationid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -601,7 +601,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connector-sdk/packages/${args.package_id}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -613,7 +613,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/external-logging/account`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -625,7 +625,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/proxy/${args.agentid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -644,7 +644,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.limit !== undefined) params['limit'] = args.limit;
       if (args.active !== undefined) params['active'] = args.active;
       const response = await makeRequest('GET', `/groups/${args.groupid}/users`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -656,7 +656,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/users/${args.userid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -672,7 +672,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/teams`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -688,7 +688,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/external-logging`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -700,7 +700,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connections/${args.connectionid}/state`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -718,7 +718,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.limit !== undefined) params['limit'] = args.limit;
       if (args.active !== undefined) params['active'] = args.active;
       const response = await makeRequest('GET', `/users`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -730,7 +730,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/connector-sdk/packages/${args.package_id}/download`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -747,7 +747,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/teams/${args.teamid}/connections`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -769,7 +769,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.project_id !== undefined) params['project_id'] = args.project_id;
       if (args.type !== undefined) params['type'] = args.type;
       const response = await makeRequest('GET', `/transformations`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -781,7 +781,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/transformation-projects/${args.projectid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -793,7 +793,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/groups/${args.groupid}/service-account`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -805,7 +805,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/webhooks/${args.webhookid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -818,7 +818,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/users/${args.userid}/groups/${args.groupid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -830,7 +830,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/hybrid-deployment-agents/${args.agentid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -846,7 +846,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/proxy`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -862,7 +862,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.cursor !== undefined) params['cursor'] = args.cursor;
       if (args.limit !== undefined) params['limit'] = args.limit;
       const response = await makeRequest('GET', `/private-links`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -881,7 +881,7 @@ export function registerGeneratedTools(server: McpServer) {
       if (args.limit !== undefined) params['limit'] = args.limit;
       if (args.active !== undefined) params['active'] = args.active;
       const response = await makeRequest('GET', `/teams/${args.teamid}/users`, params);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -894,7 +894,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/users/${args.userid}/connections/${args.connectionid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -906,7 +906,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/destinations/${args.destinationid}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 
@@ -918,7 +918,7 @@ export function registerGeneratedTools(server: McpServer) {
     },
     async (args) => {
       const response = await makeRequest('GET', `/metadata/connector-types/${args.service}`);
-      return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+      return toToolResult(response);
     }
   );
 

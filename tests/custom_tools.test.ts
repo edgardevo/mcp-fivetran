@@ -5,16 +5,26 @@ process.env.FIVETRAN_API_KEY = "test-key";
 process.env.FIVETRAN_API_SECRET = "test-secret";
 
 // Mock the common module so handlers go through our spy.
-vi.mock("../src/common.js", () => {
+// Stub only the network functions; keep the real pure helpers (toToolResult, etc.).
+vi.mock("../src/common.js", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../src/common.js")>();
     return {
+        ...actual,
         makeRequest: vi.fn(),
         makeCensusRequest: vi.fn(),
-        redactSensitiveData: (x: any) => x,
-        isSensitiveKey: () => false,
+        fetchAllPages: vi.fn(),
     };
 });
 
-const { makeRequest } = await import("../src/common.js");
+// Stub fs so file-writing export tools don't touch disk.
+vi.mock("fs", () => ({
+    existsSync: vi.fn(() => true),
+    mkdirSync: vi.fn(),
+    writeFileSync: vi.fn(),
+}));
+
+const { makeRequest, fetchAllPages } = await import("../src/common.js");
+const fs = await import("fs");
 const { registerCustomTools, isWriteEnabled } = await import("../src/custom_tools.js");
 
 const WRITE_TOOLS = ["create_connector", "sync_connector", "resync_connector"] as const;
@@ -162,6 +172,7 @@ describe("list_connectors", () => {
         const payload = asJSON(response);
 
         expect(payload).toEqual({ error: "Unauthorized: 401" });
+        expect(response.isError).toBe(true);
     });
 });
 
@@ -170,6 +181,7 @@ describe("get_account_health_summary", () => {
 
     beforeEach(() => {
         vi.mocked(makeRequest).mockReset();
+        vi.mocked(fetchAllPages).mockReset();
         ({ handlers } = (() => {
             const { server, handlers } = buildServer();
             registerCustomTools(server as any, { allowWrites: true });
@@ -177,35 +189,38 @@ describe("get_account_health_summary", () => {
         })());
     });
 
-    it("counts statuses and surfaces broken connectors", async () => {
-        vi.mocked(makeRequest).mockResolvedValue({
-            data: {
-                items: [
-                    { id: "a", schema: "s1", service: "postgres", status: { sync_state: "scheduled" } },
-                    { id: "b", schema: "s2", service: "postgres", status: { sync_state: "syncing" } },
-                    {
-                        id: "c",
-                        schema: "s3",
-                        service: "mysql",
-                        status: { sync_state: "broken", last_sync_error: "auth failed" },
-                    },
-                    { id: "d", schema: "s4", service: "stripe", status: { sync_state: "paused" } },
-                    { id: "e", schema: "s5", service: "stripe", status: { sync_state: "rescheduled" } },
-                    { id: "f", schema: "s6", service: "stripe", status: { sync_state: "weird_state" } },
-                    {
-                        id: "g",
-                        schema: "s7",
-                        service: "stripe",
-                        status: { sync_state: "scheduled", setup_state: "broken" },
-                    },
-                ],
-            },
+    it("counts statuses across ALL pages and surfaces broken connectors", async () => {
+        // Items spanning multiple pages — the tool must rely on fetchAllPages,
+        // not a single makeRequest page, or it would undercount large accounts.
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 2,
+            truncated: false,
+            items: [
+                { id: "a", schema: "s1", service: "postgres", status: { sync_state: "scheduled" } },
+                { id: "b", schema: "s2", service: "postgres", status: { sync_state: "syncing" } },
+                {
+                    id: "c",
+                    schema: "s3",
+                    service: "mysql",
+                    status: { sync_state: "broken", last_sync_error: "auth failed" },
+                },
+                { id: "d", schema: "s4", service: "stripe", status: { sync_state: "paused" } },
+                { id: "e", schema: "s5", service: "stripe", status: { sync_state: "rescheduled" } },
+                { id: "f", schema: "s6", service: "stripe", status: { sync_state: "weird_state" } },
+                {
+                    id: "g",
+                    schema: "s7",
+                    service: "stripe",
+                    status: { sync_state: "scheduled", setup_state: "broken" },
+                },
+            ],
         });
 
         const handler = handlers.get("get_account_health_summary")!;
         const response = await handler({});
         const payload = asJSON(response);
 
+        expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith("/connections");
         expect(payload.total_connectors).toBe(7);
         expect(payload.status_counts).toEqual({
             scheduled: 2,
@@ -229,6 +244,131 @@ describe("get_account_health_summary", () => {
             service: "mysql",
             error: "auth failed",
         });
+    });
+});
+
+describe("get_lineage_report", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(fetchAllPages).mockReset();
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("maps connectors (all pages) to their destinations", async () => {
+        vi.mocked(fetchAllPages).mockImplementation(async (endpoint: string) => {
+            if (endpoint === "/connections") {
+                return {
+                    pages: 1, truncated: false,
+                    items: [{ id: "c1", schema: "s1", service: "postgres", group_id: "g1" }],
+                };
+            }
+            if (endpoint === "/destinations") {
+                return {
+                    pages: 1, truncated: false,
+                    items: [{ id: "g1", schema: "dwh", service: "snowflake", region: "us-east" }],
+                };
+            }
+            return { items: [], pages: 0, truncated: false };
+        });
+
+        const handler = handlers.get("get_lineage_report")!;
+        const payload = asJSON(await handler({}));
+
+        expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith("/connections");
+        expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith("/destinations");
+        expect(payload).toHaveLength(1);
+        expect(payload[0]).toEqual({
+            connector_id: "c1",
+            connector_name: "s1",
+            source_service: "postgres",
+            destination_id: "g1",
+            destination_name: "dwh",
+            destination_service: "snowflake",
+            region: "us-east",
+        });
+    });
+});
+
+describe("analyze_connector_issues", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(fetchAllPages).mockReset();
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("returns broken/failed connectors across all pages, newest failure first", async () => {
+        vi.mocked(fetchAllPages).mockResolvedValue({
+            pages: 1, truncated: false,
+            items: [
+                { id: "ok", schema: "s", service: "x", status: { sync_state: "scheduled" } },
+                {
+                    id: "old", schema: "s2", service: "y",
+                    status: { sync_state: "broken", last_sync_error: "boom" },
+                    failed_at: "2026-01-01T00:00:00Z",
+                },
+                {
+                    id: "new", schema: "s3", service: "z",
+                    status: { setup_state: "broken" },
+                    failed_at: "2026-06-01T00:00:00Z",
+                    setup_tests: [{ status: "FAILED", title: "auth" }, { status: "PASSED", title: "ping" }],
+                },
+            ],
+        });
+
+        const handler = handlers.get("analyze_connector_issues")!;
+        const payload = asJSON(await handler({}));
+
+        expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith("/connections");
+        expect(payload.map((i: any) => i.id)).toEqual(["new", "old"]);
+        expect(payload[0].failed_tests).toEqual([{ status: "FAILED", title: "auth" }]);
+    });
+});
+
+describe("export_audit_report", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(fetchAllPages).mockReset();
+        vi.mocked(fs.writeFileSync).mockClear();
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("paginates every audited resource through fetchAllPages", async () => {
+        const byEndpoint: Record<string, any[]> = {
+            "/roles": [{ id: "r1" }],
+            "/teams": [{ id: "t1" }],
+            "/users": [{ id: "u1" }],
+            "/connections": [{ id: "c1", schema: "s1", service: "postgres", group_id: "g1", status: {} }],
+            "/destinations": [{ id: "g1", schema: "dwh", service: "snowflake", region: "us" }],
+        };
+        vi.mocked(fetchAllPages).mockImplementation(async (endpoint: string) => ({
+            items: byEndpoint[endpoint] ?? [],
+            pages: 1,
+            truncated: false,
+        }));
+
+        const handler = handlers.get("export_audit_report")!;
+        await handler({});
+
+        for (const endpoint of Object.keys(byEndpoint)) {
+            expect(vi.mocked(fetchAllPages)).toHaveBeenCalledWith(endpoint);
+        }
+        // roles, teams, users, connections_audit = 4 CSVs written
+        expect(vi.mocked(fs.writeFileSync)).toHaveBeenCalledTimes(4);
     });
 });
 

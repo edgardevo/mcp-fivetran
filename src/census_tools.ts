@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { makeCensusRequest } from "./common.js";
+import { makeCensusRequest, toToolResult } from "./common.js";
 
 export function registerCensusTools(server: McpServer) {
     server.tool(
@@ -9,7 +9,7 @@ export function registerCensusTools(server: McpServer) {
         {},
         async () => {
             const response = await makeCensusRequest("GET", "/workspaces");
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -21,7 +21,7 @@ export function registerCensusTools(server: McpServer) {
         },
         async ({ workspace_id }) => {
             const response = await makeCensusRequest("GET", `/workspaces/${workspace_id}`);
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -31,7 +31,7 @@ export function registerCensusTools(server: McpServer) {
         {},
         async () => {
             const response = await makeCensusRequest("GET", "/users");
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -44,7 +44,7 @@ export function registerCensusTools(server: McpServer) {
         },
         async (args) => {
             const response = await makeCensusRequest("GET", "/syncs", args);
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -56,7 +56,7 @@ export function registerCensusTools(server: McpServer) {
         },
         async ({ sync_id }) => {
             const response = await makeCensusRequest("GET", `/syncs/${sync_id}`);
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -70,7 +70,7 @@ export function registerCensusTools(server: McpServer) {
         },
         async (args) => {
             const response = await makeCensusRequest("GET", "/sync_runs", args);
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -82,7 +82,7 @@ export function registerCensusTools(server: McpServer) {
         },
         async ({ sync_run_id }) => {
             const response = await makeCensusRequest("GET", `/sync_runs/${sync_run_id}`);
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -92,7 +92,7 @@ export function registerCensusTools(server: McpServer) {
         {},
         async () => {
             const response = await makeCensusRequest("GET", "/sources");
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -102,7 +102,7 @@ export function registerCensusTools(server: McpServer) {
         {},
         async () => {
             const response = await makeCensusRequest("GET", "/destinations");
-            return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 }

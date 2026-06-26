@@ -3,7 +3,7 @@ import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import { stringify } from "csv-stringify/sync";
-import { makeRequest } from "./common.js";
+import { makeRequest, fetchAllPages, toToolResult } from "./common.js";
 
 export function flatten(data: any): Record<string, any> {
     const result: Record<string, any> = {};
@@ -86,9 +86,9 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
             // 1. Roles Audit
             console.error("Exporting Roles...");
-            const rolesResp = await makeRequest("GET", "/roles");
-            if (!rolesResp.error) {
-                const roles = rolesResp.data?.items || [];
+            const rolesResp = await fetchAllPages("/roles");
+            if (!("error" in rolesResp)) {
+                const roles = rolesResp.items;
                 const filepath = path.join(exportDir, "roles.csv");
                 fs.writeFileSync(filepath, stringify(roles.map((r: any) => flatten(r)), { header: true }));
                 reports.push(`Roles: ${roles.length} exported to roles.csv`);
@@ -96,9 +96,9 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
             // 2. Teams Audit
             console.error("Exporting Teams...");
-            const teamsResp = await makeRequest("GET", "/teams");
-            if (!teamsResp.error) {
-                const teams = teamsResp.data?.items || [];
+            const teamsResp = await fetchAllPages("/teams");
+            if (!("error" in teamsResp)) {
+                const teams = teamsResp.items;
                 const filepath = path.join(exportDir, "teams.csv");
                 fs.writeFileSync(filepath, stringify(teams.map((t: any) => flatten(t)), { header: true }));
                 reports.push(`Teams: ${teams.length} exported to teams.csv`);
@@ -106,9 +106,9 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
             // 3. Users Audit
             console.error("Exporting Users...");
-            const usersResp = await makeRequest("GET", "/users");
-            if (!usersResp.error) {
-                const users = usersResp.data?.items || [];
+            const usersResp = await fetchAllPages("/users");
+            if (!("error" in usersResp)) {
+                const users = usersResp.items;
                 // User objects in Fivetran API v2 include 'role' and 'logged_in_at'
                 const filepath = path.join(exportDir, "users.csv");
                 fs.writeFileSync(filepath, stringify(users.map((u: any) => flatten(u)), { header: true }));
@@ -117,12 +117,12 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
             // 4. Connections & Destinations Audit (Joined)
             console.error("Exporting Connections Audit...");
-            const connectionsResp = await makeRequest("GET", "/connections");
-            const destinationsResp = await makeRequest("GET", "/destinations");
+            const connectionsResp = await fetchAllPages("/connections");
+            const destinationsResp = await fetchAllPages("/destinations");
 
-            if (!connectionsResp.error && !destinationsResp.error) {
-                const connections = connectionsResp.data?.items || [];
-                const destinations = destinationsResp.data?.items || [];
+            if (!("error" in connectionsResp) && !("error" in destinationsResp)) {
+                const connections = connectionsResp.items;
+                const destinations = destinationsResp.items;
                 const destMap: Record<string, any> = {};
                 destinations.forEach((d: any) => { destMap[d.id] = d; });
 
@@ -185,7 +185,7 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         },
         async ({ endpoint, cursor, limit }) => {
             const response = await makeRequest("GET", endpoint, { cursor, limit });
-            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -288,7 +288,7 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         },
         async ({ connector_id }) => {
             const response = await makeRequest("GET", `/connections/${connector_id}`);
-            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -303,7 +303,7 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         async (args) => {
             const response = await makeRequest("GET", "/connections", args);
             if (response.error || !response.data?.items) {
-                return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
+                return toToolResult(response);
             }
 
             // Format output nicely and prevent LLM context overflow by limiting returned keys
@@ -319,7 +319,7 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
                 last_failed_sync: c.failed_at
             }));
 
-            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -331,7 +331,7 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         },
         async ({ connector_id }) => {
             const response = await makeRequest("GET", `/connections/${connector_id}/schemas`);
-            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -345,7 +345,7 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         },
         async ({ connector_id, schema, table }) => {
             const response = await makeRequest("GET", `/connections/${connector_id}/schemas/${schema}/tables/${table}/columns`);
-            return { content: [{ type: "text", text: typeof response === 'string' ? response : JSON.stringify(response, null, 2) }] };
+            return toToolResult(response);
         }
     );
 
@@ -356,10 +356,10 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         "Provides a high-level summary of the Fivetran account health, counting connectors by status and identifying critical failures.",
         {},
         async () => {
-            const connectionsResp = await makeRequest("GET", "/connections");
-            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
+            const connectionsResp = await fetchAllPages("/connections");
+            if ("error" in connectionsResp) return { content: [{ type: "text", text: connectionsResp.error }], isError: true };
 
-            const items = connectionsResp.data?.items || [];
+            const items = connectionsResp.items;
             const summary = {
                 total_connectors: items.length,
                 status_counts: {
@@ -402,14 +402,14 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         "Maps every connector to its destination, providing a full source-to-sink data flow report.",
         {},
         async () => {
-            const connectionsResp = await makeRequest("GET", "/connections");
-            const destinationsResp = await makeRequest("GET", "/destinations");
+            const connectionsResp = await fetchAllPages("/connections");
+            const destinationsResp = await fetchAllPages("/destinations");
 
-            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
-            if (destinationsResp.error) return { content: [{ type: "text", text: typeof destinationsResp === 'string' ? destinationsResp : JSON.stringify(destinationsResp, null, 2) }] };
+            if ("error" in connectionsResp) return { content: [{ type: "text", text: connectionsResp.error }], isError: true };
+            if ("error" in destinationsResp) return { content: [{ type: "text", text: destinationsResp.error }], isError: true };
 
-            const connections = connectionsResp.data?.items || [];
-            const destinations = destinationsResp.data?.items || [];
+            const connections = connectionsResp.items;
+            const destinations = destinationsResp.items;
             const destMap: Record<string, any> = {};
             destinations.forEach((d: any) => { destMap[d.id] = d; });
 
@@ -437,10 +437,10 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         "Performs a deep-dive into connectors with high failure rates or persistent setup issues.",
         {},
         async () => {
-            const connectionsResp = await makeRequest("GET", "/connections");
-            if (connectionsResp.error) return { content: [{ type: "text", text: typeof connectionsResp === 'string' ? connectionsResp : JSON.stringify(connectionsResp, null, 2) }] };
+            const connectionsResp = await fetchAllPages("/connections");
+            if ("error" in connectionsResp) return { content: [{ type: "text", text: connectionsResp.error }], isError: true };
 
-            const items = connectionsResp.data?.items || [];
+            const items = connectionsResp.items;
             const issues = items
                 .filter((c: any) => c.status?.sync_state === "broken" || c.status?.setup_state === "broken" || c.failed_at)
                 .map((c: any) => ({
