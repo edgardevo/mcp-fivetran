@@ -21,7 +21,7 @@ Legend: 🐞 bug · 🧹 code quality · ✨ feature · 📦 distribution · �
 
 Ordered by impact: silent wrong data > misleading behavior > robustness.
 
-- [ ] **1.1 🐞 Aggregate tools silently undercount on accounts with >100 connectors.**
+- [x] **1.1 🐞 Aggregate tools silently undercount on accounts with >100 connectors.**
   `get_account_health_summary`, `get_lineage_report`, `analyze_connector_issues`
   (`src/custom_tools.ts`) and `export_audit_report` each fetch a single
   `/connections` page (default size 100) with no cursor follow, so large accounts
@@ -30,7 +30,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   all aggregate tools through it. **Highest priority — an audit tool that drops
   data is worse than one that errors.**
 
-- [ ] **1.2 🐞 Tool errors are not flagged as errors.** Only `test_connection`
+- [x] **1.2 🐞 Tool errors are not flagged as errors.** Only `test_connection`
   sets `isError: true`. Every generated tool, every Census tool, and the aggregate
   tools return `response.error` as ordinary text in a success envelope, so the MCP
   host/model can't tell "here's your data" from "the API 404'd."
@@ -50,7 +50,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   but per-request size is hardcoded to 100.
   → Simplify using the 2.1 pagination helper; clarify/rename the cap param.
 
-- [ ] **1.5 🐞 No request timeout anywhere.** `makeApiRequest` (`src/common.ts`)
+- [x] **1.5 🐞 No request timeout anywhere.** `makeApiRequest` (`src/common.ts`)
   calls `fetch` with no `AbortController`/timeout, so a hung Fivetran/Census
   connection blocks the tool — and the stdio server — indefinitely.
   → Add `AbortSignal.timeout(~30s)`; surface a clean timeout error.
@@ -64,7 +64,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
 
 ## Section 2 — Code-quality cleanups (quick, low-risk; fold into Section 1 PRs)
 
-- [ ] **2.1 🧹 Shared auto-paginating list helper.** `fetchAllPages(endpoint,
+- [x] **2.1 🧹 Shared auto-paginating list helper.** `fetchAllPages(endpoint,
   params)` that follows `next_cursor`. Unblocks 1.1 and 1.4 and removes duplicated
   cursor logic. (Foundational — likely the first thing to build.)
 
@@ -72,7 +72,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   redacts any field literally named `key` regardless of context; the `_key` suffix
   already covers `private_key`, `encryption_key`, etc.
 
-- [ ] **2.3 🧹 Remove dead defensive code.** The
+- [x] **2.3 🧹 Remove dead defensive code.** The
   `typeof response === 'string' ? response : JSON.stringify(...)` guard appears
   ~8× but `makeRequest` never returns a string. Collapse into the shared formatter
   from 1.2.
@@ -98,11 +98,11 @@ these are grouped by value, not by count.
 The server's skills (sync-triage, health-report) imply remediation the tools
 can't currently perform.
 
-- [ ] **3.1 ✨ `update_connector`** — `PATCH /connections/{id}`. Pause/unpause,
+- [x] **3.1 ✨ `update_connector`** — `PATCH /connections/{id}`. Pause/unpause,
   change sync frequency, reschedule. *The most common "I found a problem, fix it"
   action; currently impossible.*
 
-- [ ] **3.2 ✨ `run_connection_tests`** — `POST /connections/{id}/test`.
+- [x] **3.2 ✨ `run_connection_tests`** — `POST /connections/{id}/test`.
   `analyze_connector_issues` reads failed setup tests but can't re-run them.
 
 - [ ] **3.3 ✨ Schema-config writes — the single biggest functional gap.**

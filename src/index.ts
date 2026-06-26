@@ -49,7 +49,7 @@ async function main() {
 
     const allowWrites = isWriteEnabled();
     if (!allowWrites) {
-        console.error("Write tools disabled. Set FIVETRAN_ALLOW_WRITES=true to enable create_connector, sync_connector, resync_connector.");
+        console.error("Write tools disabled. Set FIVETRAN_ALLOW_WRITES=true to enable create_connector, update_connector, sync_connector, resync_connector, run_connection_tests.");
     }
 
     registerGeneratedTools(server);

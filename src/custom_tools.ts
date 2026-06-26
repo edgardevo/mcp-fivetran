@@ -551,9 +551,37 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
             }
 
             const response = await makeRequest("POST", "/connections", undefined, body);
-            return {
-                content: [{ type: "text", text: JSON.stringify(response, null, 2) }]
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "update_connector",
+        "Updates an existing connector: pause/unpause, change sync frequency or schedule, or patch its configuration. Maps to PATCH /connections/{id}.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            paused: z.boolean().optional().describe("Pause (true) or unpause (false) the connector."),
+            sync_frequency: z.number().optional().describe("Sync frequency in minutes (e.g. 5, 15, 60, 360, 720, 1440)."),
+            schedule_type: z.string().optional().describe("'auto' for Fivetran-managed scheduling or 'manual'."),
+            daily_sync_time: z.string().optional().describe("Time of day for daily syncs (e.g. '14:00'), only when sync_frequency is 1440."),
+            run_setup_tests: z.boolean().optional().describe("Whether to run setup tests after applying the update."),
+            config: z.any().optional().describe("Partial connector-specific configuration to merge.")
+        },
+        async (args) => {
+            const body = {
+                paused: args.paused,
+                sync_frequency: args.sync_frequency,
+                schedule_type: args.schedule_type,
+                daily_sync_time: args.daily_sync_time,
+                run_setup_tests: args.run_setup_tests,
+                config: args.config
             };
+            for (const key of Object.keys(body)) {
+                if ((body as any)[key] === undefined) delete (body as any)[key];
+            }
+
+            const response = await makeRequest("PATCH", `/connections/${args.connector_id}`, undefined, body);
+            return toToolResult(response);
         }
     );
 
@@ -566,9 +594,7 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         },
         async ({ connector_id, force }) => {
             const response = await makeRequest("POST", `/connections/${connector_id}/sync`, undefined, force !== undefined ? { force } : undefined);
-            return {
-                content: [{ type: "text", text: JSON.stringify(response, null, 2) }]
-            };
+            return toToolResult(response);
         }
     );
 
@@ -580,9 +606,30 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         },
         async ({ connector_id }) => {
             const response = await makeRequest("POST", `/connections/${connector_id}/resync`);
-            return {
-                content: [{ type: "text", text: JSON.stringify(response, null, 2) }]
-            };
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "run_connection_tests",
+        "Re-runs the setup tests for a connector to diagnose connectivity/credential issues. Maps to POST /connections/{id}/test.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            trust_certificates: z.boolean().optional().describe("Trust the certificate presented by the source during the test."),
+            trust_fingerprints: z.boolean().optional().describe("Trust the SSH fingerprint presented by the source during the test.")
+        },
+        async ({ connector_id, trust_certificates, trust_fingerprints }) => {
+            const body: Record<string, any> = {};
+            if (trust_certificates !== undefined) body.trust_certificates = trust_certificates;
+            if (trust_fingerprints !== undefined) body.trust_fingerprints = trust_fingerprints;
+
+            const response = await makeRequest(
+                "POST",
+                `/connections/${connector_id}/test`,
+                undefined,
+                Object.keys(body).length > 0 ? body : undefined
+            );
+            return toToolResult(response);
         }
     );
 }

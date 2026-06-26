@@ -2,10 +2,10 @@
 
 Auto-generated from the live tool registry. Do not edit by hand — run `npm run docs` to regenerate.
 
-**Total tools:** 87
+**Total tools:** 89
 
 **Sections:**
-- [Custom audit & operations](#custom-audit-operations) — 15 tools
+- [Custom audit & operations](#custom-audit-operations) — 17 tools
 - [Fivetran REST API (generated)](#fivetran-rest-api-generated) — 63 tools
 - [Census Activations](#census-activations) — 9 tools
 
@@ -13,7 +13,7 @@ Auto-generated from the live tool registry. Do not edit by hand — run `npm run
 
 Hand-written audit, lineage, export, and operational tools. Source: `src/custom_tools.ts`.
 
-_15 tools._
+_17 tools._
 
 ### `test_connection`
 
@@ -138,6 +138,22 @@ Creates a new connector in the Fivetran account.
 | `paused` | boolean, optional | Whether to create the connector in a paused state |
 | `sync_frequency` | number, optional | Sync frequency in minutes |
 
+### `update_connector`
+
+Updates an existing connector: pause/unpause, change sync frequency or schedule, or patch its configuration. Maps to PATCH /connections/{id}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `paused` | boolean, optional | Pause (true) or unpause (false) the connector. |
+| `sync_frequency` | number, optional | Sync frequency in minutes (e.g. 5, 15, 60, 360, 720, 1440). |
+| `schedule_type` | string, optional | 'auto' for Fivetran-managed scheduling or 'manual'. |
+| `daily_sync_time` | string, optional | Time of day for daily syncs (e.g. '14:00'), only when sync_frequency is 1440. |
+| `run_setup_tests` | boolean, optional | Whether to run setup tests after applying the update. |
+| `config` | any, optional | Partial connector-specific configuration to merge. |
+
 ### `sync_connector`
 
 Forces a sync for a specific connector.
@@ -158,6 +174,18 @@ Triggers a full historical resync of a connector or specific tables/schemas.
 | Name | Type | Description |
 | --- | --- | --- |
 | `connector_id` | string | The unique identifier for the connector. |
+
+### `run_connection_tests`
+
+Re-runs the setup tests for a connector to diagnose connectivity/credential issues. Maps to POST /connections/{id}/test.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `trust_certificates` | boolean, optional | Trust the certificate presented by the source during the test. |
+| `trust_fingerprints` | boolean, optional | Trust the SSH fingerprint presented by the source during the test. |
 
 ## Fivetran REST API (generated)
 

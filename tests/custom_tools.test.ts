@@ -27,7 +27,13 @@ const { makeRequest, fetchAllPages } = await import("../src/common.js");
 const fs = await import("fs");
 const { registerCustomTools, isWriteEnabled } = await import("../src/custom_tools.js");
 
-const WRITE_TOOLS = ["create_connector", "sync_connector", "resync_connector"] as const;
+const WRITE_TOOLS = [
+    "create_connector",
+    "update_connector",
+    "sync_connector",
+    "resync_connector",
+    "run_connection_tests",
+] as const;
 
 type Handler = (args: any) => Promise<any>;
 
@@ -108,6 +114,83 @@ describe("create_connector", () => {
             paused: false,
             sync_frequency: 0,
         });
+    });
+});
+
+describe("update_connector", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("PATCHes the connection and strips undefined optional fields", async () => {
+        vi.mocked(makeRequest).mockResolvedValue({ data: { id: "conn_1", paused: true } });
+
+        const handler = handlers.get("update_connector")!;
+        await handler({ connector_id: "conn_1", paused: true });
+
+        expect(makeRequest).toHaveBeenCalledTimes(1);
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("PATCH");
+        expect(path).toBe("/connections/conn_1");
+        expect(query).toBeUndefined();
+        expect(body).toEqual({ paused: true });
+        // connector_id is a path param, not a body field
+        expect(body).not.toHaveProperty("connector_id");
+        expect(body).not.toHaveProperty("sync_frequency");
+    });
+
+    it("keeps explicit false / 0 values in the PATCH body", async () => {
+        vi.mocked(makeRequest).mockResolvedValue({ data: { id: "conn_1" } });
+
+        const handler = handlers.get("update_connector")!;
+        await handler({ connector_id: "conn_1", paused: false, sync_frequency: 0 });
+
+        const [, , , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(body).toEqual({ paused: false, sync_frequency: 0 });
+    });
+});
+
+describe("run_connection_tests", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("POSTs to the connection test endpoint with no body when no flags given", async () => {
+        vi.mocked(makeRequest).mockResolvedValue({ data: { setup_tests: [] } });
+
+        const handler = handlers.get("run_connection_tests")!;
+        await handler({ connector_id: "conn_1" });
+
+        expect(makeRequest).toHaveBeenCalledTimes(1);
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/connections/conn_1/test");
+        expect(query).toBeUndefined();
+        expect(body).toBeUndefined();
+    });
+
+    it("includes trust flags in the body when provided", async () => {
+        vi.mocked(makeRequest).mockResolvedValue({ data: { setup_tests: [] } });
+
+        const handler = handlers.get("run_connection_tests")!;
+        await handler({ connector_id: "conn_1", trust_certificates: true });
+
+        const [, , , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(body).toEqual({ trust_certificates: true });
     });
 });
 
@@ -373,7 +456,7 @@ describe("export_audit_report", () => {
 });
 
 describe("write-tool gating via FIVETRAN_ALLOW_WRITES", () => {
-    it("does NOT register the three write tools when allowWrites is false", () => {
+    it("does NOT register the gated write tools when allowWrites is false", () => {
         const { server, handlers } = buildServer();
         registerCustomTools(server as any, { allowWrites: false });
 
@@ -385,7 +468,7 @@ describe("write-tool gating via FIVETRAN_ALLOW_WRITES", () => {
         expect(handlers.has("get_account_health_summary")).toBe(true);
     });
 
-    it("does NOT register the three write tools when no option is passed and env is unset", () => {
+    it("does NOT register the gated write tools when no option is passed and env is unset", () => {
         const prev = process.env.FIVETRAN_ALLOW_WRITES;
         delete process.env.FIVETRAN_ALLOW_WRITES;
         try {
@@ -399,7 +482,7 @@ describe("write-tool gating via FIVETRAN_ALLOW_WRITES", () => {
         }
     });
 
-    it("registers the three write tools when allowWrites is true", () => {
+    it("registers the gated write tools when allowWrites is true", () => {
         const { server, handlers } = buildServer();
         registerCustomTools(server as any, { allowWrites: true });
 
