@@ -46,6 +46,11 @@ const WRITE_TOOLS = [
     "update_destination",
     "delete_destination",
     "run_destination_tests",
+    "create_group",
+    "update_group",
+    "delete_group",
+    "add_user_to_group",
+    "remove_user_from_group",
 ] as const;
 
 type Handler = (args: any) => Promise<any>;
@@ -311,6 +316,68 @@ describe("delete_connector", () => {
         const denied = await handlers.get("delete_connector")!({ connector_id: "c1", confirm: false });
         expect(makeRequest).not.toHaveBeenCalled();
         expect(denied.isError).toBe(true);
+    });
+});
+
+describe("group write tools", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        vi.mocked(makeRequest).mockResolvedValue({ data: {} });
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("create_group POSTs /groups with the name", async () => {
+        await handlers.get("create_group")!({ name: "Analytics" });
+
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/groups");
+        expect(query).toBeUndefined();
+        expect(body).toEqual({ name: "Analytics" });
+    });
+
+    it("update_group PATCHes /groups/{id}", async () => {
+        await handlers.get("update_group")!({ group_id: "g1", name: "Renamed" });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("PATCH");
+        expect(path).toBe("/groups/g1");
+        expect(body).toEqual({ name: "Renamed" });
+    });
+
+    it("add_user_to_group POSTs /groups/{id}/users and strips undefined role", async () => {
+        await handlers.get("add_user_to_group")!({ group_id: "g1", email: "a@b.com" });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/groups/g1/users");
+        expect(body).toEqual({ email: "a@b.com" });
+        expect(body).not.toHaveProperty("role");
+    });
+
+    it("remove_user_from_group DELETEs the membership with no body", async () => {
+        await handlers.get("remove_user_from_group")!({ group_id: "g1", user_id: "u1" });
+
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("DELETE");
+        expect(path).toBe("/groups/g1/users/u1");
+        expect(query).toBeUndefined();
+        expect(body).toBeUndefined();
+    });
+
+    it("delete_group requires confirm=true", async () => {
+        const refused = await handlers.get("delete_group")!({ group_id: "g1" });
+        expect(makeRequest).not.toHaveBeenCalled();
+        expect(refused.isError).toBe(true);
+
+        await handlers.get("delete_group")!({ group_id: "g1", confirm: true });
+        expect(makeRequest).toHaveBeenCalledWith("DELETE", "/groups/g1");
     });
 });
 

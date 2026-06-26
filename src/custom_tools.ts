@@ -731,6 +731,80 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         }
     );
 
+    // --- Groups & group membership ---
+
+    server.tool(
+        "create_group",
+        "Creates a new group (a destination + its connectors). Maps to POST /groups.",
+        {
+            name: z.string().describe("The display name for the group.")
+        },
+        async ({ name }) => {
+            const response = await makeRequest("POST", "/groups", undefined, { name });
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "update_group",
+        "Renames an existing group. Maps to PATCH /groups/{id}.",
+        {
+            group_id: z.string().describe("The unique identifier for the group."),
+            name: z.string().describe("The new display name for the group.")
+        },
+        async ({ group_id, name }) => {
+            const response = await makeRequest("PATCH", `/groups/${group_id}`, undefined, { name });
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "delete_group",
+        "Permanently deletes a group (and its destination association). Destructive and irreversible. Requires confirm=true. Maps to DELETE /groups/{id}.",
+        {
+            group_id: z.string().describe("The unique identifier for the group to delete."),
+            confirm: z.boolean().optional().describe("Must be set to true to actually delete. Omitted/false aborts without calling the API.")
+        },
+        async ({ group_id, confirm }) => {
+            if (confirm !== true) {
+                return {
+                    content: [{ type: "text", text: `Refused: deleting group '${group_id}' is destructive and irreversible. Re-run with confirm=true to proceed.` }],
+                    isError: true,
+                };
+            }
+            const response = await makeRequest("DELETE", `/groups/${group_id}`);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "add_user_to_group",
+        "Adds a user to a group by email, optionally with a role. Maps to POST /groups/{id}/users.",
+        {
+            group_id: z.string().describe("The unique identifier for the group."),
+            email: z.string().describe("The email address of the user to add."),
+            role: z.string().optional().describe("The role to grant within the group (e.g. 'Destination Administrator').")
+        },
+        async ({ group_id, email, role }) => {
+            const body = stripUndefined({ email, role });
+            const response = await makeRequest("POST", `/groups/${group_id}/users`, undefined, body);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "remove_user_from_group",
+        "Removes a user from a group. Maps to DELETE /groups/{id}/users/{userId}.",
+        {
+            group_id: z.string().describe("The unique identifier for the group."),
+            user_id: z.string().describe("The unique identifier for the user to remove.")
+        },
+        async ({ group_id, user_id }) => {
+            const response = await makeRequest("DELETE", `/groups/${group_id}/users/${user_id}`);
+            return toToolResult(response);
+        }
+    );
+
     // --- Schema config (enable/disable schemas, tables, columns) ---
 
     server.tool(

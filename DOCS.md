@@ -2,10 +2,10 @@
 
 Auto-generated from the live tool registry. Do not edit by hand — run `npm run docs` to regenerate.
 
-**Total tools:** 102
+**Total tools:** 107
 
 **Sections:**
-- [Custom audit & operations](#custom-audit-operations) — 30 tools
+- [Custom audit & operations](#custom-audit-operations) — 35 tools
 - [Fivetran REST API (generated)](#fivetran-rest-api-generated) — 63 tools
 - [Census Activations](#census-activations) — 9 tools
 
@@ -13,7 +13,7 @@ Auto-generated from the live tool registry. Do not edit by hand — run `npm run
 
 Hand-written audit, lineage, export, and operational tools. Source: `src/custom_tools.ts`.
 
-_30 tools._
+_35 tools._
 
 ### `test_connection`
 
@@ -254,6 +254,61 @@ Re-runs the setup tests for a destination to diagnose connectivity/credential is
 | `destination_id` | string | The unique identifier for the destination. |
 | `trust_certificates` | boolean, optional | Trust the certificate presented by the destination during the test. |
 | `trust_fingerprints` | boolean, optional | Trust the SSH fingerprint presented by the destination during the test. |
+
+### `create_group`
+
+Creates a new group (a destination + its connectors). Maps to POST /groups.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `name` | string | The display name for the group. |
+
+### `update_group`
+
+Renames an existing group. Maps to PATCH /groups/{id}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `group_id` | string | The unique identifier for the group. |
+| `name` | string | The new display name for the group. |
+
+### `delete_group`
+
+Permanently deletes a group (and its destination association). Destructive and irreversible. Requires confirm=true. Maps to DELETE /groups/{id}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `group_id` | string | The unique identifier for the group to delete. |
+| `confirm` | boolean, optional | Must be set to true to actually delete. Omitted/false aborts without calling the API. |
+
+### `add_user_to_group`
+
+Adds a user to a group by email, optionally with a role. Maps to POST /groups/{id}/users.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `group_id` | string | The unique identifier for the group. |
+| `email` | string | The email address of the user to add. |
+| `role` | string, optional | The role to grant within the group (e.g. 'Destination Administrator'). |
+
+### `remove_user_from_group`
+
+Removes a user from a group. Maps to DELETE /groups/{id}/users/{userId}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `group_id` | string | The unique identifier for the group. |
+| `user_id` | string | The unique identifier for the user to remove. |
 
 ### `update_schema_config`
 

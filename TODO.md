@@ -124,7 +124,7 @@ can't currently perform.
 - [x] **3.6 ✨ Destinations CRUD + test** — `POST/PATCH/DELETE /destinations`,
   `POST /destinations/{id}/test` (8 ops).
 
-- [ ] **3.7 ✨ Groups CRUD + user membership** — `POST/PATCH/DELETE /groups`,
+- [x] **3.7 ✨ Groups CRUD + user membership** — `POST/PATCH/DELETE /groups`,
   add/remove group users (5 ops).
 
 - [ ] **3.8 ✨ `create_connect_card`** — `POST /connections/{id}/connect-card`
