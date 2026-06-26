@@ -80,7 +80,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
 - [x] **2.4 🧹 Parallelize independent calls in `export_audit_report`.** Roles /
   teams / users / connections / destinations are independent — use `Promise.all`.
 
-- [ ] **2.5 🧹 Test coverage gaps.** No direct tests for `generated_tools.ts` or
+- [x] **2.5 🧹 Test coverage gaps.** No direct tests for `generated_tools.ts` or
   `census_tools.ts`; the trickiest logic (`export_fivetran_data` pagination,
   `find_connector_by_table`) is untested. Add tests as each is touched. Consider a
   soft coverage floor in CI once stabilized.
