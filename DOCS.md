@@ -2,10 +2,10 @@
 
 Auto-generated from the live tool registry. Do not edit by hand — run `npm run docs` to regenerate.
 
-**Total tools:** 107
+**Total tools:** 108
 
 **Sections:**
-- [Custom audit & operations](#custom-audit-operations) — 35 tools
+- [Custom audit & operations](#custom-audit-operations) — 36 tools
 - [Fivetran REST API (generated)](#fivetran-rest-api-generated) — 63 tools
 - [Census Activations](#census-activations) — 9 tools
 
@@ -13,7 +13,7 @@ Auto-generated from the live tool registry. Do not edit by hand — run `npm run
 
 Hand-written audit, lineage, export, and operational tools. Source: `src/custom_tools.ts`.
 
-_35 tools._
+_36 tools._
 
 ### `test_connection`
 
@@ -309,6 +309,18 @@ Removes a user from a group. Maps to DELETE /groups/{id}/users/{userId}.
 | --- | --- | --- |
 | `group_id` | string | The unique identifier for the group. |
 | `user_id` | string | The unique identifier for the user to remove. |
+
+### `create_connect_card`
+
+Generates a Connect Card setup link so an end user can self-serve the connector's authorization/setup. Maps to POST /connections/{id}/connect-card.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `redirect_uri` | string | HTTPS/HTTP URI to redirect the end user to after successful setup. |
+| `hide_setup_guide` | boolean, optional | Hide the embedded setup guide in the Connect Card. |
 
 ### `update_schema_config`
 

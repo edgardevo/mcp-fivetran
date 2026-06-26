@@ -7,7 +7,7 @@ Repository: [github.com/edgardevo/mcp-fivetran](https://github.com/edgardevo/mcp
 ## Key Features
 
 - **Audit-Focused**: The majority of tools are read-only `GET` operations for auditing and inspection.
-- **Write Operations**: A set of gated write tools is available for operational tasks — create/update/delete connectors, destinations and groups, manage group membership, trigger syncs/resyncs, run setup tests, edit schema/table/column configs, and reload/drop/resync schema items. Destructive deletes require an explicit `confirm=true`. All other Fivetran tools are read-only.
+- **Write Operations**: A set of gated write tools is available for operational tasks — create/update/delete connectors, destinations and groups, manage group membership, generate Connect Card setup links, trigger syncs/resyncs, run setup tests, edit schema/table/column configs, and reload/drop/resync schema items. Destructive deletes require an explicit `confirm=true`. All other Fivetran tools are read-only.
 - **Support for Fivetran Activations (Census)**: Full set of tools to audit reverse-ELT syncs, sources, and destinations.
 - **Security-First**:
   - **Recursive Redaction**: All outputs are scrubbed for sensitive keys (passwords, secrets, tokens, API keys). Redaction uses exact key names and suffix matching to avoid clobbering legitimate fields like `api_key_id` or `auth_type`. A bare `key` field is redacted only when nested inside a credential-bearing container (`config`, `auth`, `secrets`, `credentials`), so legitimate top-level `key` fields are preserved.
@@ -135,7 +135,7 @@ Tools are registered in three groups (see `src/`):
 ### Custom audit & operations (`src/custom_tools.ts`)
 **Read/audit:** `test_connection`, `get_account_health_summary`, `get_lineage_report`, `analyze_connector_issues`, `find_connector_by_table`, `export_audit_report`, `export_fivetran_data`, `get_next_page`, `list_connectors`, `get_connector_details`, `get_connector_schema`, `get_connector_columns`.
 
-**Write (gated behind `FIVETRAN_ALLOW_WRITES`):** `create_connector`, `update_connector`, `delete_connector`, `sync_connector`, `resync_connector`, `run_connection_tests`, `create_destination`, `update_destination`, `delete_destination`, `run_destination_tests`, `create_group`, `update_group`, `delete_group`, `add_user_to_group`, `remove_user_from_group`, `update_schema_config`, `update_database_schema_config`, `update_table_config`, `update_column_config`, `reload_connector_schema`, `drop_blocked_columns`, `resync_connector_tables`, `drop_blocked_column`.
+**Write (gated behind `FIVETRAN_ALLOW_WRITES`):** `create_connector`, `update_connector`, `delete_connector`, `sync_connector`, `resync_connector`, `run_connection_tests`, `create_destination`, `update_destination`, `delete_destination`, `run_destination_tests`, `create_group`, `update_group`, `delete_group`, `add_user_to_group`, `remove_user_from_group`, `create_connect_card`, `update_schema_config`, `update_database_schema_config`, `update_table_config`, `update_column_config`, `reload_connector_schema`, `drop_blocked_columns`, `resync_connector_tables`, `drop_blocked_column`.
 
 See [DOCS.md](DOCS.md) for the always-current, auto-generated reference.
 

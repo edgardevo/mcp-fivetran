@@ -51,6 +51,7 @@ const WRITE_TOOLS = [
     "delete_group",
     "add_user_to_group",
     "remove_user_from_group",
+    "create_connect_card",
 ] as const;
 
 type Handler = (args: any) => Promise<any>;
@@ -316,6 +317,49 @@ describe("delete_connector", () => {
         const denied = await handlers.get("delete_connector")!({ connector_id: "c1", confirm: false });
         expect(makeRequest).not.toHaveBeenCalled();
         expect(denied.isError).toBe(true);
+    });
+});
+
+describe("create_connect_card", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        vi.mocked(makeRequest).mockResolvedValue({ data: { connect_card: { uri: "https://..." } } });
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("POSTs /connect-card wrapping config and stripping undefined fields", async () => {
+        await handlers.get("create_connect_card")!({
+            connector_id: "c1",
+            redirect_uri: "https://app.example.com/done",
+            // hide_setup_guide omitted
+        });
+
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/connections/c1/connect-card");
+        expect(query).toBeUndefined();
+        expect(body).toEqual({
+            connect_card_config: { redirect_uri: "https://app.example.com/done" },
+        });
+    });
+
+    it("includes hide_setup_guide when provided", async () => {
+        await handlers.get("create_connect_card")!({
+            connector_id: "c1",
+            redirect_uri: "https://app.example.com/done",
+            hide_setup_guide: true,
+        });
+
+        const [, , , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(body).toEqual({
+            connect_card_config: { redirect_uri: "https://app.example.com/done", hide_setup_guide: true },
+        });
     });
 });
 

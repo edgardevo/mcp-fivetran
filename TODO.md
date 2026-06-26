@@ -127,7 +127,7 @@ can't currently perform.
 - [x] **3.7 ✨ Groups CRUD + user membership** — `POST/PATCH/DELETE /groups`,
   add/remove group users (5 ops).
 
-- [ ] **3.8 ✨ `create_connect_card`** — `POST /connections/{id}/connect-card`
+- [x] **3.8 ✨ `create_connect_card`** — `POST /connections/{id}/connect-card`
   (self-serve onboarding flow; pairs with the onboarding skill).
 
 ### 3c — Governance & security (relevant to the security-audit skill)

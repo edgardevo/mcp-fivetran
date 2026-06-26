@@ -805,6 +805,23 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         }
     );
 
+    // --- Connect Card (self-serve connector setup) ---
+
+    server.tool(
+        "create_connect_card",
+        "Generates a Connect Card setup link so an end user can self-serve the connector's authorization/setup. Maps to POST /connections/{id}/connect-card.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            redirect_uri: z.string().describe("HTTPS/HTTP URI to redirect the end user to after successful setup."),
+            hide_setup_guide: z.boolean().optional().describe("Hide the embedded setup guide in the Connect Card.")
+        },
+        async ({ connector_id, redirect_uri, hide_setup_guide }) => {
+            const connect_card_config = stripUndefined({ redirect_uri, hide_setup_guide });
+            const response = await makeRequest("POST", `/connections/${connector_id}/connect-card`, undefined, { connect_card_config });
+            return toToolResult(response);
+        }
+    );
+
     // --- Schema config (enable/disable schemas, tables, columns) ---
 
     server.tool(
