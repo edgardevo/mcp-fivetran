@@ -2,10 +2,10 @@
 
 Auto-generated from the live tool registry. Do not edit by hand — run `npm run docs` to regenerate.
 
-**Total tools:** 93
+**Total tools:** 97
 
 **Sections:**
-- [Custom audit & operations](#custom-audit-operations) — 21 tools
+- [Custom audit & operations](#custom-audit-operations) — 25 tools
 - [Fivetran REST API (generated)](#fivetran-rest-api-generated) — 63 tools
 - [Census Activations](#census-activations) — 9 tools
 
@@ -13,7 +13,7 @@ Auto-generated from the live tool registry. Do not edit by hand — run `npm run
 
 Hand-written audit, lineage, export, and operational tools. Source: `src/custom_tools.ts`.
 
-_21 tools._
+_25 tools._
 
 ### `test_connection`
 
@@ -244,6 +244,52 @@ Enables/disables a column, toggles hashing, or marks it a primary key. Maps to P
 | `enabled` | boolean, optional | Whether the column is enabled for syncing. |
 | `hashed` | boolean, optional | Whether the column value is hashed in the destination. |
 | `is_primary_key` | boolean, optional | Whether the column is treated as a primary key. |
+
+### `reload_connector_schema`
+
+Reloads a connector's schema config from the source, picking up new schemas/tables/columns. Maps to POST /connections/{id}/schemas/reload.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `exclude_mode` | string, optional | How newly-discovered items are handled: 'PRESERVE' (default — keep current state) or 'EXCLUDE' (do not auto-enable). |
+
+### `drop_blocked_columns`
+
+Drops blocked columns from the destination for the given schemas. Maps to POST /connections/{id}/schemas/drop-columns.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `schemas` | any | The schema config subtree identifying the blocked columns to drop (map of schema → tables → columns). |
+
+### `resync_connector_tables`
+
+Triggers a historical re-sync of specific tables. Maps to POST /connections/{id}/schemas/tables/resync.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `scope` | any | A map of schema name → array of table names to re-sync, e.g. { public: ["orders", "customers"] }. |
+
+### `drop_blocked_column`
+
+Drops a single blocked column from the destination. Maps to DELETE /connections/{id}/schemas/{schema}/tables/{table}/columns/{column}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector. |
+| `schema` | string | The schema name. |
+| `table` | string | The table name. |
+| `column` | string | The column name to drop. |
 
 ## Fivetran REST API (generated)
 

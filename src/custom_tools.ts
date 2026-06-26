@@ -683,4 +683,66 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
             return toToolResult(response);
         }
     );
+
+    // --- Schema lifecycle (reload, drop blocked columns, targeted table resync) ---
+
+    server.tool(
+        "reload_connector_schema",
+        "Reloads a connector's schema config from the source, picking up new schemas/tables/columns. Maps to POST /connections/{id}/schemas/reload.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            exclude_mode: z.string().optional().describe("How newly-discovered items are handled: 'PRESERVE' (default — keep current state) or 'EXCLUDE' (do not auto-enable).")
+        },
+        async ({ connector_id, exclude_mode }) => {
+            const body = stripUndefined({ exclude_mode });
+            const response = await makeRequest(
+                "POST",
+                `/connections/${connector_id}/schemas/reload`,
+                undefined,
+                Object.keys(body).length > 0 ? body : undefined
+            );
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "drop_blocked_columns",
+        "Drops blocked columns from the destination for the given schemas. Maps to POST /connections/{id}/schemas/drop-columns.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            schemas: z.any().describe("The schema config subtree identifying the blocked columns to drop (map of schema → tables → columns).")
+        },
+        async ({ connector_id, schemas }) => {
+            const response = await makeRequest("POST", `/connections/${connector_id}/schemas/drop-columns`, undefined, { schemas });
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "resync_connector_tables",
+        "Triggers a historical re-sync of specific tables. Maps to POST /connections/{id}/schemas/tables/resync.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            scope: z.any().describe("A map of schema name → array of table names to re-sync, e.g. { public: [\"orders\", \"customers\"] }.")
+        },
+        async ({ connector_id, scope }) => {
+            const response = await makeRequest("POST", `/connections/${connector_id}/schemas/tables/resync`, undefined, { scope });
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "drop_blocked_column",
+        "Drops a single blocked column from the destination. Maps to DELETE /connections/{id}/schemas/{schema}/tables/{table}/columns/{column}.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector."),
+            schema: z.string().describe("The schema name."),
+            table: z.string().describe("The table name."),
+            column: z.string().describe("The column name to drop.")
+        },
+        async ({ connector_id, schema, table, column }) => {
+            const response = await makeRequest("DELETE", `/connections/${connector_id}/schemas/${schema}/tables/${table}/columns/${column}`);
+            return toToolResult(response);
+        }
+    );
 }

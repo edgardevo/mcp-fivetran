@@ -112,7 +112,7 @@ can't currently perform.
   - `PATCH /connections/{id}/schemas/{schema}/tables/{table}`
   - `PATCH /connections/{id}/schemas/{schema}/tables/{table}/columns/{column}`
 
-- [ ] **3.4 ✨ Schema lifecycle helpers** — `POST /schemas/reload`,
+- [x] **3.4 ✨ Schema lifecycle helpers** — `POST /schemas/reload`,
   `POST /schemas/drop-columns`, `POST /schemas/tables/resync` (targeted resync),
   `DELETE .../columns/{column}` (drop blocked column).
 

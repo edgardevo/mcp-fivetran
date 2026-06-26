@@ -37,6 +37,10 @@ const WRITE_TOOLS = [
     "update_database_schema_config",
     "update_table_config",
     "update_column_config",
+    "reload_connector_schema",
+    "drop_blocked_columns",
+    "resync_connector_tables",
+    "drop_blocked_column",
 ] as const;
 
 type Handler = (args: any) => Promise<any>;
@@ -269,6 +273,69 @@ describe("schema-config write tools", () => {
         expect(path).toBe("/connections/c1/schemas/public/tables/orders/columns/email");
         expect(body).toEqual({ enabled: true, hashed: true });
         expect(body).not.toHaveProperty("is_primary_key");
+    });
+});
+
+describe("schema-lifecycle write tools", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        vi.mocked(makeRequest).mockResolvedValue({ data: {} });
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("reload_connector_schema POSTs /schemas/reload with exclude_mode", async () => {
+        await handlers.get("reload_connector_schema")!({ connector_id: "c1", exclude_mode: "EXCLUDE" });
+
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/connections/c1/schemas/reload");
+        expect(query).toBeUndefined();
+        expect(body).toEqual({ exclude_mode: "EXCLUDE" });
+    });
+
+    it("reload_connector_schema sends no body when exclude_mode is omitted", async () => {
+        await handlers.get("reload_connector_schema")!({ connector_id: "c1" });
+
+        const [, , , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(body).toBeUndefined();
+    });
+
+    it("drop_blocked_columns POSTs /schemas/drop-columns with the schemas map", async () => {
+        const schemas = { public: { tables: { orders: { columns: { secret: { enabled: false } } } } } };
+        await handlers.get("drop_blocked_columns")!({ connector_id: "c1", schemas });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/connections/c1/schemas/drop-columns");
+        expect(body).toEqual({ schemas });
+    });
+
+    it("resync_connector_tables POSTs /schemas/tables/resync with the scope map", async () => {
+        const scope = { public: ["orders", "customers"] };
+        await handlers.get("resync_connector_tables")!({ connector_id: "c1", scope });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/connections/c1/schemas/tables/resync");
+        expect(body).toEqual({ scope });
+    });
+
+    it("drop_blocked_column DELETEs the column path with no body", async () => {
+        await handlers.get("drop_blocked_column")!({
+            connector_id: "c1", schema: "public", table: "orders", column: "email",
+        });
+
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("DELETE");
+        expect(path).toBe("/connections/c1/schemas/public/tables/orders/columns/email");
+        expect(query).toBeUndefined();
+        expect(body).toBeUndefined();
     });
 });
 
