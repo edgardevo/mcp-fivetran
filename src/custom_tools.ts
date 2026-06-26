@@ -84,9 +84,17 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
 
             const reports = [];
 
+            // Fetch every audited resource concurrently — they are independent.
+            console.error("Fetching roles, teams, users, connections, destinations...");
+            const [rolesResp, teamsResp, usersResp, connectionsResp, destinationsResp] = await Promise.all([
+                fetchAllPages("/roles"),
+                fetchAllPages("/teams"),
+                fetchAllPages("/users"),
+                fetchAllPages("/connections"),
+                fetchAllPages("/destinations"),
+            ]);
+
             // 1. Roles Audit
-            console.error("Exporting Roles...");
-            const rolesResp = await fetchAllPages("/roles");
             if (!("error" in rolesResp)) {
                 const roles = rolesResp.items;
                 const filepath = path.join(exportDir, "roles.csv");
@@ -95,8 +103,6 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
             }
 
             // 2. Teams Audit
-            console.error("Exporting Teams...");
-            const teamsResp = await fetchAllPages("/teams");
             if (!("error" in teamsResp)) {
                 const teams = teamsResp.items;
                 const filepath = path.join(exportDir, "teams.csv");
@@ -105,8 +111,6 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
             }
 
             // 3. Users Audit
-            console.error("Exporting Users...");
-            const usersResp = await fetchAllPages("/users");
             if (!("error" in usersResp)) {
                 const users = usersResp.items;
                 // User objects in Fivetran API v2 include 'role' and 'logged_in_at'
@@ -116,10 +120,6 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
             }
 
             // 4. Connections & Destinations Audit (Joined)
-            console.error("Exporting Connections Audit...");
-            const connectionsResp = await fetchAllPages("/connections");
-            const destinationsResp = await fetchAllPages("/destinations");
-
             if (!("error" in connectionsResp) && !("error" in destinationsResp)) {
                 const connections = connectionsResp.items;
                 const destinations = destinationsResp.items;
