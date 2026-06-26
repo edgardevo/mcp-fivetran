@@ -23,11 +23,36 @@ Repository: [github.com/edgardevo/mcp-fivetran](https://github.com/edgardevo/mcp
 
 ### Installation
 
+The package exposes a `dgc-fivetran` binary, so MCP clients can launch it directly without a manual build. Run it straight from the GitHub repo with `npx` (the `prepare` script builds on install):
+
+```bash
+npx github:edgardevo/mcp-fivetran
+```
+
+Or clone for local development:
+
 ```bash
 git clone https://github.com/edgardevo/mcp-fivetran.git
 cd mcp-fivetran
-npm install
-npm run build
+npm install   # runs the build via the prepare hook
+```
+
+Example MCP client config (e.g. Claude Desktop / Claude Code), passing credentials through `env`:
+
+```json
+{
+  "mcpServers": {
+    "fivetran": {
+      "command": "npx",
+      "args": ["-y", "github:edgardevo/mcp-fivetran"],
+      "env": {
+        "FIVETRAN_API_KEY": "your_key",
+        "FIVETRAN_API_SECRET": "your_secret",
+        "CENSUS_API_KEY": "your_census_key"
+      }
+    }
+  }
+}
 ```
 
 ### Configuration

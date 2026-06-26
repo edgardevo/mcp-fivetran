@@ -150,7 +150,7 @@ can't currently perform.
 
 ## Section 4 — Platform, distribution & docs
 
-- [ ] **4.1 📦 Packaging for `npx` / npm.** No `bin` field or shebang today, so
+- [x] **4.1 📦 Packaging for `npx` / npm.** No `bin` field or shebang today, so
   install is git-clone + build only. Add a `bin` entry + shebang; consider
   publishing to npm to lower adoption friction.
 

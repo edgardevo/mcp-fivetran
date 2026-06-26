@@ -1,4 +1,7 @@
 {
+    "bin": {
+        "dgc-fivetran": "dist/index.js"
+    },
     "bugs": {
         "url": "https://github.com/edgardevo/mcp-fivetran/issues"
     },
@@ -16,6 +19,9 @@
         "typescript": "^5.0.0",
         "vitest": "^2.1.0"
     },
+    "files": [
+        "dist"
+    ],
     "homepage": "https://github.com/edgardevo/mcp-fivetran#readme",
     "license": "MIT",
     "main": "dist/index.js",
@@ -30,6 +36,7 @@
         "dev": "tsx src/index.ts",
         "docs": "tsx scripts/generate-docs.mts",
         "lint": "prek run --all-files",
+        "prepare": "npm run build",
         "start": "node dist/index.js",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
