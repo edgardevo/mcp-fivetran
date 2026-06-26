@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { registerGeneratedTools } from "./generated_tools.js";
 import { registerCustomTools, isWriteEnabled } from "./custom_tools.js";
 import { registerCensusTools } from "./census_tools.js";
+import { registerPrompts } from "./prompts.js";
 import { makeRequest, makeCensusRequest } from "./common.js";
 
 async function main() {
@@ -56,6 +57,7 @@ async function main() {
     registerGeneratedTools(server);
     registerCustomTools(server, { allowWrites });
     registerCensusTools(server);
+    registerPrompts(server);
 
     const transport = new StdioServerTransport();
     await server.connect(transport);

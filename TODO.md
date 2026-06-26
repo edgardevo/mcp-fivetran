@@ -158,7 +158,7 @@ can't currently perform.
   supports `trigger_sync` and more. Add gated write tools to mirror the Fivetran
   side. Also: Census tools have no pagination helper.
 
-- [ ] **4.3 ✨ Expose MCP prompts/resources.** Only tools are exposed. The rich
+- [x] **4.3 ✨ Expose MCP prompts/resources.** Only tools are exposed. The rich
   `skills/` and `commands/` are Gemini-extension-specific; surfacing a few as MCP
   prompts would help other MCP clients.
 

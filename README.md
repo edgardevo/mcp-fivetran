@@ -12,6 +12,7 @@ Repository: [github.com/edgardevo/mcp-fivetran](https://github.com/edgardevo/mcp
 - **Security-First**:
   - **Recursive Redaction**: All outputs are scrubbed for sensitive keys (passwords, secrets, tokens, API keys). Redaction uses exact key names and suffix matching to avoid clobbering legitimate fields like `api_key_id` or `auth_type`. A bare `key` field is redacted only when nested inside a credential-bearing container (`config`, `auth`, `secrets`, `credentials`), so legitimate top-level `key` fields are preserved.
   - **Rate-Limit Safety**: 429 responses are retried with `Retry-After` honored, capped at 3 retries to prevent unbounded recursion.
+- **MCP Prompts**: Reusable workflow prompts (`fivetran_health_report`, `fivetran_security_audit`, `fivetran_sync_triage`, `fivetran_lineage_overview`) are exposed via the MCP prompts capability, so any MCP client — not just Gemini CLI — can run the audit playbooks.
 - **Data Export**: Built-in tools to export data to CSV/JSON for offline analysis.
 - **Pagination**: Automatic handling of cursor-based pagination for both Fivetran and Activations APIs.
 
