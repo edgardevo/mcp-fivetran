@@ -6,7 +6,7 @@ Repository: [github.com/edgardevo/mcp-fivetran](https://github.com/edgardevo/mcp
 
 ## Key Features
 
-- **Audit-Focused**: The majority of tools are read-only `GET` operations for auditing and inspection.
+- **Audit-Focused**: The majority of tools are read-only `GET` operations for auditing and inspection — every read endpoint in the Fivetran REST API is covered. Destructive and account-mutating operations are gated (see below) or intentionally omitted.
 - **Write Operations**: A set of gated write tools is available for operational tasks — create/update/delete connectors, destinations and groups, manage group membership, generate Connect Card setup links, trigger syncs/resyncs, run setup tests, edit schema/table/column configs, and reload/drop/resync schema items. Destructive deletes require an explicit `confirm=true`. All other Fivetran tools are read-only.
 - **Support for Fivetran Activations (Census)**: Full set of tools to audit reverse-ELT syncs, sources, and destinations.
 - **Security-First**:
@@ -14,7 +14,7 @@ Repository: [github.com/edgardevo/mcp-fivetran](https://github.com/edgardevo/mcp
   - **Rate-Limit Safety**: 429 responses are retried with `Retry-After` honored, capped at 3 retries to prevent unbounded recursion.
 - **MCP Prompts**: Reusable workflow prompts (`fivetran_health_report`, `fivetran_security_audit`, `fivetran_sync_triage`, `fivetran_lineage_overview`) are exposed via the MCP prompts capability, so any MCP client — not just Gemini CLI — can run the audit playbooks.
 - **Data Export**: Built-in tools to export data to CSV/JSON for offline analysis.
-- **Pagination**: Automatic handling of cursor-based pagination for both Fivetran and Activations APIs.
+- **Pagination**: The aggregate/audit tools and the export tools follow cursor-based pagination automatically (via a shared `fetchAllPages` helper), so they don't undercount large accounts. The individual generated GET tools return a single page — use `get_next_page` or the export tools to fetch more.
 
 ## Setup
 

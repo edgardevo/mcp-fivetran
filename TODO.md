@@ -170,7 +170,7 @@ can't currently perform.
 - [ ] **4.5 ✨ Optional HTTP/SSE transport.** Only stdio today; an HTTP transport
   would broaden where the server can run.
 
-- [ ] **4.6 📝 README accuracy.**
+- [x] **4.6 📝 README accuracy.**
   - Fix the auto-pagination claim (only `export_fivetran_data` follows cursors
     today; see 1.1/2.1).
   - Add a one-liner: 100% of read endpoints covered; destructive writes (DELETE,
