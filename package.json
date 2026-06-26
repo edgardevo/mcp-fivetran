@@ -36,5 +36,5 @@
         "test:watch": "vitest",
         "validate": "node scripts/validate-template.mjs"
     },
-    "version": "0.7.0"
+    "version": "0.8.0"
 }
