@@ -2,10 +2,10 @@
 
 Auto-generated from the live tool registry. Do not edit by hand — run `npm run docs` to regenerate.
 
-**Total tools:** 98
+**Total tools:** 102
 
 **Sections:**
-- [Custom audit & operations](#custom-audit-operations) — 26 tools
+- [Custom audit & operations](#custom-audit-operations) — 30 tools
 - [Fivetran REST API (generated)](#fivetran-rest-api-generated) — 63 tools
 - [Census Activations](#census-activations) — 9 tools
 
@@ -13,7 +13,7 @@ Auto-generated from the live tool registry. Do not edit by hand — run `npm run
 
 Hand-written audit, lineage, export, and operational tools. Source: `src/custom_tools.ts`.
 
-_26 tools._
+_30 tools._
 
 ### `test_connection`
 
@@ -198,6 +198,62 @@ Re-runs the setup tests for a connector to diagnose connectivity/credential issu
 | `connector_id` | string | The unique identifier for the connector. |
 | `trust_certificates` | boolean, optional | Trust the certificate presented by the source during the test. |
 | `trust_fingerprints` | boolean, optional | Trust the SSH fingerprint presented by the source during the test. |
+
+### `create_destination`
+
+Creates a new destination (warehouse) in a group. Maps to POST /destinations.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `group_id` | string | The destination group ID. |
+| `service` | string | The destination service (e.g. 'snowflake', 'bigquery', 'redshift'). |
+| `time_zone_offset` | string | UTC offset for the destination's time zone (e.g. '-5', '+1'). |
+| `config` | any, optional | A JSON object with the destination-specific configuration (host, credentials, etc.). |
+| `region` | string, optional | The destination region. |
+| `run_setup_tests` | boolean, optional | Whether to run setup tests after creation. |
+| `trust_certificates` | boolean, optional | Trust the certificate presented by the destination. |
+| `trust_fingerprints` | boolean, optional | Trust the SSH fingerprint presented by the destination. |
+
+### `update_destination`
+
+Updates an existing destination's configuration, region, or trust settings. Maps to PATCH /destinations/{id}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `destination_id` | string | The unique identifier for the destination. |
+| `config` | any, optional | Partial destination-specific configuration to merge. |
+| `region` | string, optional | The destination region. |
+| `time_zone_offset` | string, optional | UTC offset for the destination's time zone. |
+| `run_setup_tests` | boolean, optional | Whether to run setup tests after the update. |
+| `trust_certificates` | boolean, optional | Trust the certificate presented by the destination. |
+| `trust_fingerprints` | boolean, optional | Trust the SSH fingerprint presented by the destination. |
+
+### `delete_destination`
+
+Permanently deletes a destination. Destructive and irreversible. Requires confirm=true. Maps to DELETE /destinations/{id}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `destination_id` | string | The unique identifier for the destination to delete. |
+| `confirm` | boolean, optional | Must be set to true to actually delete. Omitted/false aborts without calling the API. |
+
+### `run_destination_tests`
+
+Re-runs the setup tests for a destination to diagnose connectivity/credential issues. Maps to POST /destinations/{id}/test.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `destination_id` | string | The unique identifier for the destination. |
+| `trust_certificates` | boolean, optional | Trust the certificate presented by the destination during the test. |
+| `trust_fingerprints` | boolean, optional | Trust the SSH fingerprint presented by the destination during the test. |
 
 ### `update_schema_config`
 

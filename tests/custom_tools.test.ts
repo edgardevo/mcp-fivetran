@@ -42,6 +42,10 @@ const WRITE_TOOLS = [
     "resync_connector_tables",
     "drop_blocked_column",
     "delete_connector",
+    "create_destination",
+    "update_destination",
+    "delete_destination",
+    "run_destination_tests",
 ] as const;
 
 type Handler = (args: any) => Promise<any>;
@@ -307,6 +311,71 @@ describe("delete_connector", () => {
         const denied = await handlers.get("delete_connector")!({ connector_id: "c1", confirm: false });
         expect(makeRequest).not.toHaveBeenCalled();
         expect(denied.isError).toBe(true);
+    });
+});
+
+describe("destination write tools", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        vi.mocked(makeRequest).mockResolvedValue({ data: {} });
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("create_destination POSTs /destinations and strips undefined optionals", async () => {
+        await handlers.get("create_destination")!({
+            group_id: "g1",
+            service: "snowflake",
+            time_zone_offset: "-5",
+            config: { host: "wh.example.com" },
+            // region, run_setup_tests, trust_* omitted
+        });
+
+        const [method, path, query, body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/destinations");
+        expect(query).toBeUndefined();
+        expect(body).toEqual({
+            group_id: "g1",
+            service: "snowflake",
+            time_zone_offset: "-5",
+            config: { host: "wh.example.com" },
+        });
+        expect(body).not.toHaveProperty("region");
+        expect(body).not.toHaveProperty("run_setup_tests");
+    });
+
+    it("update_destination PATCHes /destinations/{id}", async () => {
+        await handlers.get("update_destination")!({ destination_id: "d1", region: "US" });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("PATCH");
+        expect(path).toBe("/destinations/d1");
+        expect(body).toEqual({ region: "US" });
+    });
+
+    it("run_destination_tests POSTs /destinations/{id}/test (no body when no flags)", async () => {
+        await handlers.get("run_destination_tests")!({ destination_id: "d1" });
+
+        const [method, path, , body] = vi.mocked(makeRequest).mock.calls[0];
+        expect(method).toBe("POST");
+        expect(path).toBe("/destinations/d1/test");
+        expect(body).toBeUndefined();
+    });
+
+    it("delete_destination requires confirm=true", async () => {
+        const refused = await handlers.get("delete_destination")!({ destination_id: "d1" });
+        expect(makeRequest).not.toHaveBeenCalled();
+        expect(refused.isError).toBe(true);
+        expect(refused.content[0].text).toMatch(/confirm/i);
+
+        await handlers.get("delete_destination")!({ destination_id: "d1", confirm: true });
+        expect(makeRequest).toHaveBeenCalledWith("DELETE", "/destinations/d1");
     });
 });
 

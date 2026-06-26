@@ -121,7 +121,7 @@ can't currently perform.
 
 ### 3b — Medium value: provisioning & destinations
 
-- [ ] **3.6 ✨ Destinations CRUD + test** — `POST/PATCH/DELETE /destinations`,
+- [x] **3.6 ✨ Destinations CRUD + test** — `POST/PATCH/DELETE /destinations`,
   `POST /destinations/{id}/test` (8 ops).
 
 - [ ] **3.7 ✨ Groups CRUD + user membership** — `POST/PATCH/DELETE /groups`,

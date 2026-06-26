@@ -625,14 +625,113 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
         }
     );
 
-    // --- Schema config (enable/disable schemas, tables, columns) ---
-
     function stripUndefined(obj: Record<string, any>): Record<string, any> {
         for (const key of Object.keys(obj)) {
             if (obj[key] === undefined) delete obj[key];
         }
         return obj;
     }
+
+    // --- Destinations ---
+
+    server.tool(
+        "create_destination",
+        "Creates a new destination (warehouse) in a group. Maps to POST /destinations.",
+        {
+            group_id: z.string().describe("The destination group ID."),
+            service: z.string().describe("The destination service (e.g. 'snowflake', 'bigquery', 'redshift')."),
+            time_zone_offset: z.string().describe("UTC offset for the destination's time zone (e.g. '-5', '+1')."),
+            config: z.any().optional().describe("A JSON object with the destination-specific configuration (host, credentials, etc.)."),
+            region: z.string().optional().describe("The destination region."),
+            run_setup_tests: z.boolean().optional().describe("Whether to run setup tests after creation."),
+            trust_certificates: z.boolean().optional().describe("Trust the certificate presented by the destination."),
+            trust_fingerprints: z.boolean().optional().describe("Trust the SSH fingerprint presented by the destination.")
+        },
+        async (args) => {
+            const body = stripUndefined({
+                group_id: args.group_id,
+                service: args.service,
+                time_zone_offset: args.time_zone_offset,
+                config: args.config,
+                region: args.region,
+                run_setup_tests: args.run_setup_tests,
+                trust_certificates: args.trust_certificates,
+                trust_fingerprints: args.trust_fingerprints,
+            });
+            const response = await makeRequest("POST", "/destinations", undefined, body);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "update_destination",
+        "Updates an existing destination's configuration, region, or trust settings. Maps to PATCH /destinations/{id}.",
+        {
+            destination_id: z.string().describe("The unique identifier for the destination."),
+            config: z.any().optional().describe("Partial destination-specific configuration to merge."),
+            region: z.string().optional().describe("The destination region."),
+            time_zone_offset: z.string().optional().describe("UTC offset for the destination's time zone."),
+            run_setup_tests: z.boolean().optional().describe("Whether to run setup tests after the update."),
+            trust_certificates: z.boolean().optional().describe("Trust the certificate presented by the destination."),
+            trust_fingerprints: z.boolean().optional().describe("Trust the SSH fingerprint presented by the destination.")
+        },
+        async (args) => {
+            const body = stripUndefined({
+                config: args.config,
+                region: args.region,
+                time_zone_offset: args.time_zone_offset,
+                run_setup_tests: args.run_setup_tests,
+                trust_certificates: args.trust_certificates,
+                trust_fingerprints: args.trust_fingerprints,
+            });
+            const response = await makeRequest("PATCH", `/destinations/${args.destination_id}`, undefined, body);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "delete_destination",
+        "Permanently deletes a destination. Destructive and irreversible. Requires confirm=true. Maps to DELETE /destinations/{id}.",
+        {
+            destination_id: z.string().describe("The unique identifier for the destination to delete."),
+            confirm: z.boolean().optional().describe("Must be set to true to actually delete. Omitted/false aborts without calling the API.")
+        },
+        async ({ destination_id, confirm }) => {
+            if (confirm !== true) {
+                return {
+                    content: [{ type: "text", text: `Refused: deleting destination '${destination_id}' is destructive and irreversible. Re-run with confirm=true to proceed.` }],
+                    isError: true,
+                };
+            }
+            const response = await makeRequest("DELETE", `/destinations/${destination_id}`);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
+        "run_destination_tests",
+        "Re-runs the setup tests for a destination to diagnose connectivity/credential issues. Maps to POST /destinations/{id}/test.",
+        {
+            destination_id: z.string().describe("The unique identifier for the destination."),
+            trust_certificates: z.boolean().optional().describe("Trust the certificate presented by the destination during the test."),
+            trust_fingerprints: z.boolean().optional().describe("Trust the SSH fingerprint presented by the destination during the test.")
+        },
+        async ({ destination_id, trust_certificates, trust_fingerprints }) => {
+            const body: Record<string, any> = {};
+            if (trust_certificates !== undefined) body.trust_certificates = trust_certificates;
+            if (trust_fingerprints !== undefined) body.trust_fingerprints = trust_fingerprints;
+
+            const response = await makeRequest(
+                "POST",
+                `/destinations/${destination_id}/test`,
+                undefined,
+                Object.keys(body).length > 0 ? body : undefined
+            );
+            return toToolResult(response);
+        }
+    );
+
+    // --- Schema config (enable/disable schemas, tables, columns) ---
 
     server.tool(
         "update_schema_config",
