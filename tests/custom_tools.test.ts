@@ -41,6 +41,7 @@ const WRITE_TOOLS = [
     "drop_blocked_columns",
     "resync_connector_tables",
     "drop_blocked_column",
+    "delete_connector",
 ] as const;
 
 type Handler = (args: any) => Promise<any>;
@@ -273,6 +274,39 @@ describe("schema-config write tools", () => {
         expect(path).toBe("/connections/c1/schemas/public/tables/orders/columns/email");
         expect(body).toEqual({ enabled: true, hashed: true });
         expect(body).not.toHaveProperty("is_primary_key");
+    });
+});
+
+describe("delete_connector", () => {
+    let handlers: Map<string, Handler>;
+
+    beforeEach(() => {
+        vi.mocked(makeRequest).mockReset();
+        vi.mocked(makeRequest).mockResolvedValue({ data: {} });
+        ({ handlers } = (() => {
+            const { server, handlers } = buildServer();
+            registerCustomTools(server as any, { allowWrites: true });
+            return { handlers };
+        })());
+    });
+
+    it("DELETEs the connection when confirm is true", async () => {
+        const response = await handlers.get("delete_connector")!({ connector_id: "c1", confirm: true });
+
+        expect(makeRequest).toHaveBeenCalledWith("DELETE", "/connections/c1");
+        expect(response.isError).toBeUndefined();
+    });
+
+    it("refuses and does not call the API when confirm is missing/false", async () => {
+        const response = await handlers.get("delete_connector")!({ connector_id: "c1" });
+
+        expect(makeRequest).not.toHaveBeenCalled();
+        expect(response.isError).toBe(true);
+        expect(response.content[0].text).toMatch(/confirm/i);
+
+        const denied = await handlers.get("delete_connector")!({ connector_id: "c1", confirm: false });
+        expect(makeRequest).not.toHaveBeenCalled();
+        expect(denied.isError).toBe(true);
     });
 });
 

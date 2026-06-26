@@ -529,6 +529,25 @@ export function registerCustomTools(server: McpServer, options: { allowWrites?: 
     );
 
     server.tool(
+        "delete_connector",
+        "Permanently deletes a connector. Destructive and irreversible. Requires confirm=true as a safety guard. Maps to DELETE /connections/{id}.",
+        {
+            connector_id: z.string().describe("The unique identifier for the connector to delete."),
+            confirm: z.boolean().optional().describe("Must be set to true to actually delete. Omitted/false aborts without calling the API.")
+        },
+        async ({ connector_id, confirm }) => {
+            if (confirm !== true) {
+                return {
+                    content: [{ type: "text", text: `Refused: deleting connector '${connector_id}' is destructive and irreversible. Re-run with confirm=true to proceed.` }],
+                    isError: true,
+                };
+            }
+            const response = await makeRequest("DELETE", `/connections/${connector_id}`);
+            return toToolResult(response);
+        }
+    );
+
+    server.tool(
         "update_connector",
         "Updates an existing connector: pause/unpause, change sync frequency or schedule, or patch its configuration. Maps to PATCH /connections/{id}.",
         {

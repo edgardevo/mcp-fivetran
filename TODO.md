@@ -116,7 +116,7 @@ can't currently perform.
   `POST /schemas/drop-columns`, `POST /schemas/tables/resync` (targeted resync),
   `DELETE .../columns/{column}` (drop blocked column).
 
-- [ ] **3.5 ✨ `delete_connector`** — `DELETE /connections/{id}`. Destructive;
+- [x] **3.5 ✨ `delete_connector`** — `DELETE /connections/{id}`. Destructive;
   gate carefully (consider an extra confirmation arg).
 
 ### 3b — Medium value: provisioning & destinations

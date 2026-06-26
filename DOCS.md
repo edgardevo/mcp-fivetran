@@ -2,10 +2,10 @@
 
 Auto-generated from the live tool registry. Do not edit by hand — run `npm run docs` to regenerate.
 
-**Total tools:** 97
+**Total tools:** 98
 
 **Sections:**
-- [Custom audit & operations](#custom-audit-operations) — 25 tools
+- [Custom audit & operations](#custom-audit-operations) — 26 tools
 - [Fivetran REST API (generated)](#fivetran-rest-api-generated) — 63 tools
 - [Census Activations](#census-activations) — 9 tools
 
@@ -13,7 +13,7 @@ Auto-generated from the live tool registry. Do not edit by hand — run `npm run
 
 Hand-written audit, lineage, export, and operational tools. Source: `src/custom_tools.ts`.
 
-_25 tools._
+_26 tools._
 
 ### `test_connection`
 
@@ -138,6 +138,17 @@ Creates a new connector in the Fivetran account.
 | `run_setup_tests` | boolean, optional | Whether to run setup tests automatically |
 | `paused` | boolean, optional | Whether to create the connector in a paused state |
 | `sync_frequency` | number, optional | Sync frequency in minutes |
+
+### `delete_connector`
+
+Permanently deletes a connector. Destructive and irreversible. Requires confirm=true as a safety guard. Maps to DELETE /connections/{id}.
+
+**Parameters:**
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `connector_id` | string | The unique identifier for the connector to delete. |
+| `confirm` | boolean, optional | Must be set to true to actually delete. Omitted/false aborts without calling the API. |
 
 ### `update_connector`
 
