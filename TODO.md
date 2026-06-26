@@ -68,7 +68,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   params)` that follows `next_cursor`. Unblocks 1.1 and 1.4 and removes duplicated
   cursor logic. (Foundational — likely the first thing to build.)
 
-- [ ] **2.2 🧹 Redaction: drop bare `"key"` exact match** (`src/common.ts`). It
+- [x] **2.2 🧹 Redaction: drop bare `"key"` exact match** (`src/common.ts`). It
   redacts any field literally named `key` regardless of context; the `_key` suffix
   already covers `private_key`, `encryption_key`, etc.
 
@@ -77,7 +77,7 @@ Ordered by impact: silent wrong data > misleading behavior > robustness.
   ~8× but `makeRequest` never returns a string. Collapse into the shared formatter
   from 1.2.
 
-- [ ] **2.4 🧹 Parallelize independent calls in `export_audit_report`.** Roles /
+- [x] **2.4 🧹 Parallelize independent calls in `export_audit_report`.** Roles /
   teams / users / connections / destinations are independent — use `Promise.all`.
 
 - [ ] **2.5 🧹 Test coverage gaps.** No direct tests for `generated_tools.ts` or

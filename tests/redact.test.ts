@@ -20,6 +20,14 @@ describe("isSensitiveKey", () => {
         expect(isSensitiveKey("CLIENT_SECRET")).toBe(true);
     });
 
+    it("treats a bare 'key' as sensitive ONLY inside a config/auth/secrets subtree", () => {
+        // Outside a credential container, a field literally named "key" is allowed
+        // (e.g. a map/index key), to avoid over-redacting legitimate fields.
+        expect(isSensitiveKey("key")).toBe(false);
+        // Inside a credential container it is redacted.
+        expect(isSensitiveKey("key", true)).toBe(true);
+    });
+
     it("flags keys via sensitive suffix", () => {
         expect(isSensitiveKey("db_password")).toBe(true);
         expect(isSensitiveKey("aws_secret_access_key")).toBe(true);
@@ -87,6 +95,37 @@ describe("redactSensitiveData", () => {
         };
         const out = redactSensitiveData(input);
         expect(out).toEqual(input);
+    });
+
+    it("leaves a bare 'key' alone outside a credential container", () => {
+        const input = { key: "PK-123", value: "v", partition: { key: "shard-1" } };
+        const out = redactSensitiveData(input);
+        expect(out.key).toBe("PK-123");
+        expect(out.partition.key).toBe("shard-1");
+    });
+
+    it("redacts a bare 'key' nested under config / auth containers", () => {
+        const input = {
+            config: { key: "secret-key-1", host: "db" },
+            auth: { key: "secret-key-2" },
+        };
+        const out = redactSensitiveData(input);
+        expect(out.config.key).toBe("[REDACTED]");
+        expect(out.config.host).toBe("db");
+        expect(out.auth.key).toBe("[REDACTED]");
+    });
+
+    it("wholesale-redacts secrets / credentials subtrees (they are exact-sensitive keys)", () => {
+        const input = { secrets: { key: "x" }, credentials: { key: "y" } };
+        const out = redactSensitiveData(input);
+        expect(out.secrets).toBe("[REDACTED]");
+        expect(out.credentials).toBe("[REDACTED]");
+    });
+
+    it("propagates the credential-container context to deeper descendants", () => {
+        const input = { config: { nested: { deeper: { key: "still-secret" } } } };
+        const out = redactSensitiveData(input);
+        expect(out.config.nested.deeper.key).toBe("[REDACTED]");
     });
 
     it("does not mutate the input", () => {

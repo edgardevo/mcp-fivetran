@@ -10,7 +10,7 @@ Repository: [github.com/edgardevo/mcp-fivetran](https://github.com/edgardevo/mcp
 - **Write Operations**: A small set of write tools is available for operational tasks (`create_connector`, `update_connector`, `sync_connector`, `resync_connector`, `run_connection_tests`). All other Fivetran tools are read-only.
 - **Support for Fivetran Activations (Census)**: Full set of tools to audit reverse-ELT syncs, sources, and destinations.
 - **Security-First**:
-  - **Recursive Redaction**: All outputs are scrubbed for sensitive keys (passwords, secrets, tokens, API keys). Redaction uses exact key names and suffix matching to avoid clobbering legitimate fields like `api_key_id` or `auth_type`.
+  - **Recursive Redaction**: All outputs are scrubbed for sensitive keys (passwords, secrets, tokens, API keys). Redaction uses exact key names and suffix matching to avoid clobbering legitimate fields like `api_key_id` or `auth_type`. A bare `key` field is redacted only when nested inside a credential-bearing container (`config`, `auth`, `secrets`, `credentials`), so legitimate top-level `key` fields are preserved.
   - **Rate-Limit Safety**: 429 responses are retried with `Retry-After` honored, capped at 3 retries to prevent unbounded recursion.
 - **Data Export**: Built-in tools to export data to CSV/JSON for offline analysis.
 - **Pagination**: Automatic handling of cursor-based pagination for both Fivetran and Activations APIs.

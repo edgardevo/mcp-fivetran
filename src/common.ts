@@ -33,8 +33,19 @@ const SENSITIVE_EXACT = new Set<string>([
     "passphrase",
     "authorization",
     "encryption_key",
-    "key",
 ]);
+
+// Field names that are only treated as sensitive when nested inside a
+// credential-bearing container (see SENSITIVE_CONTAINERS). A bare "key" is
+// commonly a legitimate map/index field elsewhere, so we only redact it at
+// config depth to avoid over-redacting.
+const CONFIG_ONLY_SENSITIVE = new Set<string>(["key"]);
+
+// Container field names whose descendants are treated as credential context.
+// Note: "secret"/"secrets"/"credential"/"credentials" are themselves exact
+// sensitive keys, so their subtrees are redacted wholesale before we recurse;
+// the containers that actually matter here are the ones we descend into.
+const SENSITIVE_CONTAINERS = new Set<string>(["config", "auth", "secrets", "credentials"]);
 
 const SENSITIVE_SUFFIXES = [
     "_password", "_passwd", "_pwd",
@@ -45,22 +56,24 @@ const SENSITIVE_SUFFIXES = [
     "_passphrase",
 ];
 
-export function isSensitiveKey(key: string): boolean {
+export function isSensitiveKey(key: string, inSensitiveContainer: boolean = false): boolean {
     const lower = key.toLowerCase();
     if (SENSITIVE_EXACT.has(lower)) return true;
+    if (inSensitiveContainer && CONFIG_ONLY_SENSITIVE.has(lower)) return true;
     return SENSITIVE_SUFFIXES.some((suffix) => lower.endsWith(suffix));
 }
 
-export function redactSensitiveData(data: any): any {
+export function redactSensitiveData(data: any, inSensitiveContainer: boolean = false): any {
     if (Array.isArray(data)) {
-        return data.map(redactSensitiveData);
+        return data.map((item) => redactSensitiveData(item, inSensitiveContainer));
     } else if (data && typeof data === "object") {
         const newData: Record<string, any> = {};
         for (const [key, value] of Object.entries(data)) {
-            if (isSensitiveKey(key)) {
+            if (isSensitiveKey(key, inSensitiveContainer)) {
                 newData[key] = "[REDACTED]";
             } else {
-                newData[key] = redactSensitiveData(value);
+                const childInContainer = inSensitiveContainer || SENSITIVE_CONTAINERS.has(key.toLowerCase());
+                newData[key] = redactSensitiveData(value, childInContainer);
             }
         }
         return newData;
